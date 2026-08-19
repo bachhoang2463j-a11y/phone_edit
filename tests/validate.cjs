@@ -20,6 +20,8 @@ const skipCompile = new Set([
   'P22_render_ComfyUI分支稳定key并禁用标题缓存', // render 表达式中间片段，由最终产物断言验证
   'P25_boot_preset_loader',                    // 函数声明前置注入，末尾继续原 y5 函数
   'P27_other_settings_preset_button',          // render 表达式流片段，由最终产物断言验证
+  'P28_boot_hide_ready_notification',          // boot 表达式流片段，由最终产物断言验证
+  'P29_boot_disable_automatic_regex_import',   // boot 表达式流片段，由最终产物断言验证
 ]);
 for (const r of replacements) {
   if (skipCompile.has(r.name) || r.name.startsWith('P24_')) { console.log(`  ≈ ${r.name}（由最终产物断言证明）`); continue; }
@@ -84,12 +86,21 @@ const checks = [
 const comfyStart = fixed.indexOf("{key:'comfyui',class:'settings-section'");
 const comfyEnd = fixed.indexOf("'pollinations'===n.value.apiFormat", comfyStart);
 const comfyRender = comfyStart >= 0 && comfyEnd > comfyStart ? fixed.slice(comfyStart, comfyEnd) : '';
+const presetStart = fixed.indexOf('async function __improvedPhoneLoadPresetResources');
+const presetEnd = fixed.indexOf('globalThis.__improvedPhoneLoadPresetResources', presetStart);
+const presetLoader = presetStart >= 0 && presetEnd > presetStart ? fixed.slice(presetStart, presetEnd) : '';
 checks.push(
   ['ComfyUI v-model 使用 NEED_PATCH 标志', (comfyRender.match(/null,512\)/g) || []).length === 6],
   ['ComfyUI 表单不存在无动态属性列表的 PROPS 标志', !comfyRender.includes('null,8)')],
   ['旧版初始化资源弹窗已禁用', fixed.includes("&&!1&&!function(){try{const e=getVariables({type:'character'})")],
   ['手动预置资源加载器已注册', fixed.includes('globalThis.__improvedPhoneLoadPresetResources=__improvedPhoneLoadPresetResources')],
-  ['其他设置页包含预置资源按钮', fixed.includes("P.value?'载入中...':'载入预置资源'")],
+  ['角色数据和表情包只执行一次变量写回', (presetLoader.match(/replaceVariables\(/g) || []).length === 1],
+  ['其他设置页包含三个资源勾选项', fixed.includes("'加载默认数据'") && fixed.includes("'加载默认表情包'") && fixed.includes("'导入默认正则'")],
+  ['资源按钮载入所选项目', fixed.includes("P.value?'载入中...':'载入所选资源'")],
+  ['资源导入不再使用浏览器确认框', !fixed.includes("confirm('将用内置预置覆盖当前角色卡")],
+  ['资源导入成功后静默刷新', fixed.includes("if(!((!O.value||n.data)&&(!R.value||n.stickers)&&(!X.value||n.regex)))throw new Error('部分预置资源载入失败');window.location.reload()")],
+  ['初始化完成通知已隐藏', fixed.includes('}else $_(e);const t=ke(),')],
+  ['默认正则不再启动时自动导入', fixed.includes('!1&&await b5(),await B5(),')],
 );
 for (const [name, ok] of checks) {
   if (ok) { pass++; console.log(`  ✓ ${name}`); }

@@ -84,3 +84,12 @@
 - 在 `OtherSettings` 设置页增加“预置资源”区块和确认按钮，按需载入当前角色卡的 `phone_data`、`phone_stickers` 与默认正则。
 - 新增 P25-P27：统一资源加载器、设置动作、设置页按钮；P18 改为不可达条件，移除无效的 P19/P20 记忆标记补丁。
 - 验证：`tests/validate.cjs` 34 项通过，`tests/sandbox.test.cjs` 23 项通过，`node --check phone_index_fixed.js` 通过。
+
+# [2026-08-20] 修复预置资源只保留表情包并补全三项勾选 UI
+
+- 根因：基础数据与表情包原先分别调用 `getVariables()` / `replaceVariables()`；第二次角色变量整对象写回可能使用旧快照，覆盖第一次写入的 `phone_data`。
+- P25 改为在同一份角色变量对象中同时设置 `phone_data` 和 `phone_stickers`，只执行一次 `replaceVariables()`。
+- P26/P27 增加“默认数据、默认表情包、默认正则”三个独立开关，移除浏览器原生确认框和成功 toast；成功后静默刷新以重新载入手机状态。
+- P28 隐藏“外置小手机已就绪”通知；P29 禁止启动时自动导入默认正则，使勾选项真正按需执行。
+- 验证：`tests/validate.cjs` 38 项、`tests/sandbox.test.cjs` 23 项全部通过，完整 bundle 语法检查通过。
+- 实机验收：用户确认默认头像、背景、表情包均能正确载入，三个勾选项和静默刷新生效，本轮修复有效。

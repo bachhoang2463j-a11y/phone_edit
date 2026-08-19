@@ -120,8 +120,9 @@
 | `r5.kQ` / `r5.hg` / `r5.I1` / `r5.sQ` | 默认用户、角色、随机头像、背景 |
 | `r5.Og` / `r5.Tj` / `r5.TN` / `r5.lG` | 默认音乐、地图、群组、字体 |
 | `Yl` | 默认表情包库，写入 `phone_stickers` |
-| `__improvedPhoneLoadPresetResources()` | 设置页“载入预置资源”按钮调用的统一异步入口；写入当前角色变量并返回 `data/stickers/regex` 状态 |
-| `OtherSettings` setup 局部 `P` / `Q` | 按钮忙碌状态与确认后动作 |
+| `__improvedPhoneLoadPresetResources()` | 设置页“载入所选资源”调用的统一异步入口；基础数据与表情包共用一次 `replaceVariables()`，返回 `data/stickers/regex` 状态 |
+| `OtherSettings` setup 局部 `P` / `O` / `R` / `X` / `Q` | 忙碌状态、默认数据/表情包/正则三个选项及执行动作 |
+| `Q_(e)` | 原版“外置小手机已就绪”通知；P28 使正常初始化不再调用它 |
 
 ---
 
