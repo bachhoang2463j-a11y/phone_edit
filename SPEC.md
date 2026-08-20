@@ -27,7 +27,9 @@
   * 采样器/种子节点：默认节点 `3` (KSampler，生图前自动注入随机 Seed)
   * 模型选择：自动拉取 `/object_info/CheckpointLoaderSimple` 支持在线选择模型。
 * **边界与约束**：
-  * 本地 ComfyUI 必须配置允许跨域：`--enable-cors-header "*"`。
+  * 本机访问可使用 `127.0.0.1:8188`；局域网手机访问必须改用电脑 LAN IP，不能使用手机自身的 `127.0.0.1`。
+  * ComfyUI 必须监听局域网并允许跨域，例如：`--listen 0.0.0.0 --enable-cors-header "*"`。
+  * 运行时所有生图入口必须将 `comfyui` 映射到 `cfg.comfyui`，且只校验 URL，不要求 API Key。
 
 ## 4. 验收标准
 1. **补丁可重现**：由 `phone_index.js` 运行补丁脚本可稳定生成 `phone_index_fixed.js`。

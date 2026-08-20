@@ -124,6 +124,16 @@
 | `OtherSettings` setup 局部 `P` / `O` / `R` / `X` / `Q` | 忙碌状态、默认数据/表情包/正则三个选项及执行动作 |
 | `Q_(e)` | 原版“外置小手机已就绪”通知；P28 使正常初始化不再调用它 |
 
+### 4.2 运行时生图入口的 ComfyUI 映射
+
+作者 8.0 的私聊、动态、直播、相机等入口各自包含一段后端名称、配置对象和 URL/Key 预校验。P30-P32 对七处运行时代码统一补齐：
+
+| 补丁 | 作用 |
+| :--- | :--- |
+| P30 | `apiFormat === 'comfyui'` 时显示 `ComfyUI`，不再落回 `NovelAI` |
+| P31 | `apiFormat === 'comfyui'` 时读取 `cfg.comfyui`，不再错误读取 `cfg.pollinations` |
+| P32 | ComfyUI 仅要求 `url`；NovelAI/OpenAI/Gemini 继续执行原有 Key 校验 |
+
 ---
 
 ## 5. SillyTavern 酒馆宿主交互 API

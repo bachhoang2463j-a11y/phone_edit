@@ -93,3 +93,9 @@
 - P28 隐藏“外置小手机已就绪”通知；P29 禁止启动时自动导入默认正则，使勾选项真正按需执行。
 - 验证：`tests/validate.cjs` 38 项、`tests/sandbox.test.cjs` 23 项全部通过，完整 bundle 语法检查通过。
 - 实机验收：用户确认默认头像、背景、表情包均能正确载入，三个勾选项和静默刷新生效，本轮修复有效。
+## [20260820-comfyui-lan-entry] 2026-08-20 - 修复手机端局域网 ComfyUI 被错误判定为 NovelAI
+
+- **现象**：手机端配置电脑 LAN 地址（如 `http://192.168.110.83:8188`）后，生图入口仍提示填写 NovelAI URL/API；同一手机上的其他插件可正常访问该 ComfyUI。
+- **根因**：Module 685 已支持 ComfyUI 和局域网 URL，但私聊、动态、直播、相机等七处运行时入口仍只有 NovelAI/OpenAI/Gemini/Pollinations 映射；`comfyui` 被落回 Pollinations 配置并按 URL+Key 规则拦截。
+- **修复**：新增 P30-P32，统一补齐 ComfyUI 标签、`cfg.comfyui` 配置选择和仅 URL 校验；其他后端校验不变。
+- **验证**：补丁/渲染回归 54/54、ComfyUI 沙箱测试 23/23、完整 bundle 语法检查通过。

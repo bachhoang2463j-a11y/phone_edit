@@ -63,6 +63,8 @@ D:/Project/phone/
 
 ComfyUI 配置和保存逻辑仍位于压缩模块 920，生图分发位于模块 685。ComfyUI 的正向提示词、反向提示词和采样器节点 ID 默认分别为 `6`、`7`、`3`。P21-P24 修复了 Vue 编译缓存槽位和 v-model patch flag，P6/P13 处理保存异常及工作流 JSON 超出 localStorage 配额的降级情况。
 
+局域网手机端可将 ComfyUI URL 填为电脑的局域网地址，例如 `http://192.168.110.83:8188`。P30-P32 已使私聊、动态、直播、相机等全部运行时生图入口识别 `comfyui`，读取 `cfg.comfyui`，并仅校验 URL、不要求 API Key。电脑端 ComfyUI 仍需监听局域网地址并允许跨域，例如使用 `--listen 0.0.0.0 --enable-cors-header "*"`；同时需允许 Windows 防火墙中的 8188 端口访问。
+
 验证命令：
 
 ```text

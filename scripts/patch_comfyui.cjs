@@ -169,6 +169,30 @@ const replacements = [
     from: "function(){try{const e=localStorage.getItem('improved_phone_import_regex');return null===e||'true'===e}catch{return!0}}()&&await b5(),await B5(),",
     to: "!1&&await b5(),await B5(),",
   },
+  ...[
+    ['s', 1], ['n', 3], ['a', 2], ['t', 1],
+  ].map(([variable, expected]) => ({
+    name: `P30_image_entry_label_${variable}`,
+    expected,
+    from: `'pollinations'===${variable}.apiFormat?'Pollinations':'openai'===${variable}.apiFormat?'OpenAI':'gemini'===${variable}.apiFormat?'Gemini':'NovelAI'`,
+    to: `'pollinations'===${variable}.apiFormat?'Pollinations':'openai'===${variable}.apiFormat?'OpenAI':'gemini'===${variable}.apiFormat?'Gemini':'comfyui'===${variable}.apiFormat?'ComfyUI':'NovelAI'`,
+  })),
+  ...[
+    ['s', 1], ['n', 3], ['a', 2], ['t', 1],
+  ].map(([variable, expected]) => ({
+    name: `P31_image_entry_config_${variable}`,
+    expected,
+    from: `'novelai'===${variable}.apiFormat?${variable}.novelai:'openai'===${variable}.apiFormat?${variable}.openai:'gemini'===${variable}.apiFormat?${variable}.gemini:${variable}.pollinations`,
+    to: `'novelai'===${variable}.apiFormat?${variable}.novelai:'openai'===${variable}.apiFormat?${variable}.openai:'gemini'===${variable}.apiFormat?${variable}.gemini:'comfyui'===${variable}.apiFormat?${variable}.comfyui:${variable}.pollinations`,
+  })),
+  ...[
+    ['s', 'c', 1], ['n', 'a', 2], ['a', 'r', 2], ['t', 'o', 1], ['n', 'o', 1],
+  ].map(([config, api, expected]) => ({
+    name: `P32_image_entry_validation_${config}_${api}`,
+    expected,
+    from: `!('pollinations'===${config}.apiFormat||${api}.url&&'key'in ${api}&&${api}.key)`,
+    to: `!(('pollinations'===${config}.apiFormat)||('comfyui'===${config}.apiFormat&&${api}.url)||(${api}.url&&'key'in ${api}&&${api}.key))`,
+  })),
 ];
 
 // ---------------------------------------------------------------- 执行
@@ -178,9 +202,10 @@ let failed = false;
 
 for (const r of replacements) {
   const count = src.split(r.from).length - 1;
-  if (count !== 1) {
+  const expected = r.expected ?? 1;
+  if (count !== expected) {
     failed = true;
-    log.push(`FAIL  ${r.name}: 期望出现 1 次，实际 ${count} 次`);
+    log.push(`FAIL  ${r.name}: 期望出现 ${expected} 次，实际 ${count} 次`);
   } else {
     src = src.split(r.from).join(r.to);
     log.push(`OK    ${r.name}`);

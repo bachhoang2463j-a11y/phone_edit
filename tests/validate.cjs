@@ -89,6 +89,10 @@ const comfyRender = comfyStart >= 0 && comfyEnd > comfyStart ? fixed.slice(comfy
 const presetStart = fixed.indexOf('async function __improvedPhoneLoadPresetResources');
 const presetEnd = fixed.indexOf('globalThis.__improvedPhoneLoadPresetResources', presetStart);
 const presetLoader = presetStart >= 0 && presetEnd > presetStart ? fixed.slice(presetStart, presetEnd) : '';
+const legacyImageEntryLabels = fixed.match(/'pollinations'===([A-Za-z_$][\w$]*)\.apiFormat\?'Pollinations':'openai'===\1\.apiFormat\?'OpenAI':'gemini'===\1\.apiFormat\?'Gemini':'NovelAI'/g) || [];
+const comfyImageEntryLabels = fixed.match(/'gemini'===([A-Za-z_$][\w$]*)\.apiFormat\?'Gemini':'comfyui'===\1\.apiFormat\?'ComfyUI':'NovelAI'/g) || [];
+const comfyImageEntryConfigs = fixed.match(/'gemini'===([A-Za-z_$][\w$]*)\.apiFormat\?\1\.gemini:'comfyui'===\1\.apiFormat\?\1\.comfyui:\1\.pollinations/g) || [];
+const comfyUrlOnlyChecks = fixed.match(/'comfyui'===([A-Za-z_$][\w$]*)\.apiFormat&&([A-Za-z_$][\w$]*)\.url/g) || [];
 checks.push(
   ['ComfyUI v-model 使用 NEED_PATCH 标志', (comfyRender.match(/null,512\)/g) || []).length === 6],
   ['ComfyUI 表单不存在无动态属性列表的 PROPS 标志', !comfyRender.includes('null,8)')],
@@ -101,6 +105,9 @@ checks.push(
   ['资源导入成功后静默刷新', fixed.includes("if(!((!O.value||n.data)&&(!R.value||n.stickers)&&(!X.value||n.regex)))throw new Error('部分预置资源载入失败');window.location.reload()")],
   ['初始化完成通知已隐藏', fixed.includes('}else $_(e);const t=ke(),')],
   ['默认正则不再启动时自动导入', fixed.includes('!1&&await b5(),await B5(),')],
+  ['所有运行时生图入口显示 ComfyUI 标签', legacyImageEntryLabels.length === 0 && comfyImageEntryLabels.length === 7],
+  ['所有运行时生图入口读取 comfyui 配置', comfyImageEntryConfigs.length === 7],
+  ['所有运行时生图入口对 ComfyUI 仅校验 URL', comfyUrlOnlyChecks.length === 7],
 );
 for (const [name, ok] of checks) {
   if (ok) { pass++; console.log(`  ✓ ${name}`); }
