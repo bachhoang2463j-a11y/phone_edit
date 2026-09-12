@@ -99,3 +99,9 @@
 - **根因**：Module 685 已支持 ComfyUI 和局域网 URL，但私聊、动态、直播、相机等七处运行时入口仍只有 NovelAI/OpenAI/Gemini/Pollinations 映射；`comfyui` 被落回 Pollinations 配置并按 URL+Key 规则拦截。
 - **修复**：新增 P30-P32，统一补齐 ComfyUI 标签、`cfg.comfyui` 配置选择和仅 URL 校验；其他后端校验不变。
 - **验证**：补丁/渲染回归 54/54、ComfyUI 沙箱测试 23/23、完整 bundle 语法检查通过。
+# [2026-09-12] 永久隐藏三个辅助脚本按钮
+
+- **现象**：用户在酒馆助手脚本管理界面删除【删最后一块】【复位】【刷新】后，打开角色卡按钮即复原。
+- **根因**：bundle 尾部启动时无条件执行 `replaceScriptButtons` 注册四个按钮；`CHAT_CHANGED` 监听在切换角色卡后整页重载并重新注册，运行时手动删除必然被覆盖。
+- **修复**：新增 P33，将三个辅助按钮 `visible:!0` 改为 `visible:!1`（保留数组项以维持 `getButtonEvent` 绑定，避免中断 bootstrap 初始化），【手机】按钮保持可见。
+- **验证**：`tests/validate.cjs` 55 项、`tests/sandbox.test.cjs` 23 项全部通过，`node --check phone_index_fixed.js` 通过；产物已部署至 `D:\SillyTavern\SillyTavern\public\scripts\phone_index.js` 并确认补丁生效。

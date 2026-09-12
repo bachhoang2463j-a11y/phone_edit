@@ -193,6 +193,11 @@ const replacements = [
     from: `!('pollinations'===${config}.apiFormat||${api}.url&&'key'in ${api}&&${api}.key)`,
     to: `!(('pollinations'===${config}.apiFormat)||('comfyui'===${config}.apiFormat&&${api}.url)||(${api}.url&&'key'in ${api}&&${api}.key))`,
   })),
+  {
+    name: 'P33_boot_隐藏三个辅助脚本按钮',
+    from: "const v='删最后一块';replaceScriptButtons([{name:'手机',visible:!0},{name:v,visible:!0},{name:'复位',visible:!0},{name:'刷新',visible:!0}]);",
+    to: "const v='删最后一块';replaceScriptButtons([{name:'手机',visible:!0},{name:v,visible:!1},{name:'复位',visible:!1},{name:'刷新',visible:!1}]);",
+  },
 ];
 
 // ---------------------------------------------------------------- 执行
