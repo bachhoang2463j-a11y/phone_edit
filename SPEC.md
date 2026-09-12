@@ -14,6 +14,7 @@
 * **状态持久化**：
   * 本地设置：`localStorage` (`phone_novelai_config`, `phone_api_config`, `phone_presets`)
   * 剧情状态：SillyTavern 宿主角色变量 (`phone_data`)
+  * 手机内容块：三种模式可切换（P34-P41）——聊天隐藏变量 `$phone_blocks`（默认，不写楼层、不进提示词）、追加到最后楼层、新建楼层
 * **宿主挂载**：通过 Shadow DOM 隔离 CSS，避免与酒馆宿主样式产生命名冲突。
 
 ## 3. ComfyUI 生图接入规范

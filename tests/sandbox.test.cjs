@@ -3,7 +3,7 @@
  * 沙箱集成测试：验证补丁后 phone_index_fixed.js 中
  *  A) 配置中心 920：comfyui 保存/读取往返、配额降级、旧配置兼容
  *  B) 生图引擎 685：ComfyUI 分发分支全链路（mock fetch 三接口）
- *  C) 兼容性：apiFormat 校验、默认配置结构
+ *  C) 聊天变量存储兼容层：mock 楼层/变量 API，验证重定向、虚拟楼层、哨兵更新/删除、透传与模式开关
  */
 'use strict';
 
@@ -372,6 +372,156 @@ console.log('\n== B) Module 685 ComfyUI 分发 ==');
       ok('B15 队列入口 comfyui 直连返回', !!qres && qres.dataUrl.startsWith('data:image/'));
     } catch (e) {
       ok('B15 队列入口异常', false, e.message);
+    }
+
+    // ---------------------------------------------------------------- 测试 C：聊天变量存储兼容层
+    console.log('\n== C) 聊天变量存储兼容层 ==');
+    {
+      const START = '/*__PHONE_VAR_STORAGE_START__*/';
+      const END = '/*__PHONE_VAR_STORAGE_END__*/';
+      const si = code.indexOf(START), ei = code.indexOf(END);
+      ok('C0 兼容层已注入产物', si >= 0 && ei > si);
+      const shimCode = code.slice(si, ei + END.length);
+
+      // 每个用例独立沙箱：mock 楼层/变量 API，安装 shim 后测行为
+      function buildShimSandbox() {
+        const calls = { create: [], set: [], del: [] };
+        const lsStore = {};
+        const chatVars = {};
+        const floors = {
+          0: { message_id: 0, name: 'User', role: 'user', is_hidden: false, message: '你好', data: {}, extra: {} },
+          1: { message_id: 1, name: 'AI', role: 'assistant', is_hidden: false, message: '<chat_history target="小明" type="private">\nname: 小明\nmessages: []\n</chat_history>', data: {}, extra: {} },
+        };
+        const sandbox = {
+          console: { info() {}, log() {}, warn() {} },
+          Promise, Math, Date, JSON, String, Number, Array, Object, RegExp, Error, parseInt,
+          globalThis: undefined,
+          localStorage: {
+            getItem(k) { return Object.prototype.hasOwnProperty.call(lsStore, k) ? lsStore[k] : null; },
+            setItem(k, v) { lsStore[k] = String(v); },
+            removeItem(k) { delete lsStore[k]; },
+          },
+          getVariables: () => JSON.parse(JSON.stringify(chatVars)),
+          insertOrAssignVariables: (obj) => { Object.assign(chatVars, JSON.parse(JSON.stringify(obj))); },
+          getChatMessages: (range) => {
+            const s = String(range);
+            const m = s.match(/^(\d+)-(\d+)$/);
+            let ids = [];
+            if (m) { for (let i = +m[1]; i <= +m[2]; i++) ids.push(i); }
+            else if (/^-?\d+$/.test(s)) ids = [Math.max(0, parseInt(s, 10))];
+            return ids.filter((i) => floors[i]).map((i) => Object.assign({}, floors[i]));
+          },
+          setChatMessages: async (list) => { calls.set.push(list); for (const it of list) if (floors[it.message_id] && it.message !== undefined) floors[it.message_id].message = it.message; },
+          createChatMessages: async (list) => { calls.create.push(list); let next = 2; for (const it of list) floors[next] = { message_id: next++, name: it.name || 'AI', role: it.role, is_hidden: !!it.is_hidden, message: it.message, data: {}, extra: {} }; },
+          deleteChatMessages: async (ids) => { calls.del.push(ids); for (const i of ids) delete floors[i]; },
+        };
+        sandbox.globalThis = sandbox;
+        const ctx = vm.createContext(sandbox);
+        vm.runInContext(shimCode, ctx, { filename: 'phone_var_storage.js' });
+        return { sandbox, calls, chatVars, floors, lsStore };
+      }
+
+      // C1 安装成功且 API 已接管
+      {
+        const t = buildShimSandbox();
+        ok('C1 安装成功并标记', t.sandbox.__improvedPhoneVarStorageInstalled === true);
+      }
+
+      // C2 变量模式（默认开）：含块消息不建楼、块入变量
+      {
+        const t = buildShimSandbox();
+        const block = '<chat_history target="小明" type="private">\nname: 小明\nmessages:\n- c: 你好\n</chat_history>';
+        await t.sandbox.createChatMessages([{ role: 'assistant', message: block, is_hidden: false }]);
+        ok('C2 含块消息不创建楼层', t.calls.create.length === 0);
+        ok('C2 块已写入聊天变量', Array.isArray(t.chatVars.$phone_blocks) && t.chatVars.$phone_blocks[0] === block);
+      }
+
+      // C3 无块消息透传建楼（如"跳转时间"系统楼层）
+      {
+        const t = buildShimSandbox();
+        await t.sandbox.createChatMessages([{ role: 'system', message: '跳转时间到 3月2日 10:00', is_hidden: false }]);
+        ok('C3 无块消息透传创建楼层', t.calls.create.length === 1 && t.calls.create[0][0].message.includes('跳转时间'));
+        ok('C3 聊天变量未被写入', !t.chatVars.$phone_blocks);
+      }
+
+      // C4 范围查询末尾拼接虚拟楼层
+      {
+        const t = buildShimSandbox();
+        const b1 = '<phone_module type="diary" character="小明" timestamp="1">a: 1</phone_module>';
+        const b2 = '<chat_history target="小红" type="private">a: 2</chat_history>';
+        t.chatVars.$phone_blocks = [b1, b2];
+        const rows = t.sandbox.getChatMessages('0-1');
+        ok('C4 真实楼层原样返回', rows.length >= 2 && rows[0].message_id === 0 && rows[1].message_id === 1);
+        ok('C4 末尾拼接虚拟楼层', rows.length === 4 && rows[2].message_id === 1e9 && rows[3].message_id === 1e9 + 1);
+        ok('C4 虚拟楼层结构完整', rows[2].role === 'assistant' && rows[2].is_hidden === true && rows[2].message === b1);
+      }
+
+      // C5 哨兵单查返回对应虚拟楼层
+      {
+        const t = buildShimSandbox();
+        t.chatVars.$phone_blocks = ['<phone_module type="diary">x</phone_module>'];
+        const rows = t.sandbox.getChatMessages(String(1e9));
+        ok('C5 哨兵单查返回虚拟楼层', rows.length === 1 && rows[0].message_id === 1e9);
+        const empty = t.sandbox.getChatMessages(String(1e9 + 5));
+        ok('C5 越界哨兵返回空', empty.length === 0);
+      }
+
+      // C6 哨兵 set 就地更新变量块
+      {
+        const t = buildShimSandbox();
+        const b0 = '<chat_history target="小明" type="private">a: 1</chat_history>';
+        const b1 = '<chat_history target="小明" type="private">a: 2</chat_history>';
+        t.chatVars.$phone_blocks = [b0];
+        await t.sandbox.setChatMessages([{ message_id: 1e9, message: b1 }]);
+        ok('C6 哨兵更新写入变量', t.chatVars.$phone_blocks[0] === b1);
+        ok('C6 真实楼层未被写', t.calls.set.length === 0);
+      }
+
+      // C7 真实楼层无块：新增块入变量、楼层写入被拦截
+      {
+        const t = buildShimSandbox();
+        const block = '<phone_module type="forum" timestamp="9">a: 1</phone_module>';
+        await t.sandbox.setChatMessages([{ message_id: 0, message: t.floors[0].message + '\n\n' + block }]);
+        ok('C7 新增块入变量', t.chatVars.$phone_blocks && t.chatVars.$phone_blocks[0] === block);
+        ok('C7 楼层写入被拦截', t.calls.set.length === 0 && t.floors[0].message === '你好');
+      }
+
+      // C8 真实楼层已有块（旧数据就地更新）：透传
+      {
+        const t = buildShimSandbox();
+        const nb = '<chat_history target="小明" type="private">name: 小明\nmessages: []\n</chat_history>';
+        await t.sandbox.setChatMessages([{ message_id: 1, message: nb }]);
+        ok('C8 旧数据就地更新透传', t.calls.set.length === 1 && t.floors[1].message === nb);
+        ok('C8 不写入聊天变量', !t.chatVars.$phone_blocks);
+      }
+
+      // C9 哨兵删除变量块
+      {
+        const t = buildShimSandbox();
+        t.chatVars.$phone_blocks = ['<phone_module type="a">1</phone_module>', '<phone_module type="b">2</phone_module>'];
+        await t.sandbox.deleteChatMessages([1e9 + 1]);
+        ok('C9 哨兵删除对应变量块', t.chatVars.$phone_blocks.length === 1 && t.chatVars.$phone_blocks[0].includes('type="a"'));
+        ok('C9 真实楼层未受影响', t.calls.del.length === 0 && !!t.floors[1]);
+      }
+
+      // C10 模式关闭：全透传
+      {
+        const t = buildShimSandbox();
+        t.lsStore['phone_display_settings'] = JSON.stringify({ useChatVariables: false });
+        const block = '<chat_history target="小明" type="private">a: 1</chat_history>';
+        await t.sandbox.createChatMessages([{ role: 'assistant', message: block, is_hidden: false }]);
+        ok('C10 模式关闭透传建楼', t.calls.create.length === 1);
+        const rows = t.sandbox.getChatMessages('0-2');
+        ok('C10 模式关闭不拼虚拟块', !rows.some((r) => r.message_id >= 1e9));
+      }
+
+      // C11 重复安装幂等
+      {
+        const t = buildShimSandbox();
+        const first = t.sandbox.getChatMessages;
+        t.sandbox.__improvedPhoneVarStorageInstall();
+        ok('C11 重复安装幂等', t.sandbox.getChatMessages === first);
+      }
     }
 
     console.log(`\n结果: ${pass} 通过, ${fail} 失败`);

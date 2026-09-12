@@ -25,6 +25,8 @@
 | `phone_drag_position` | JSON 字符串 | 手机窗口在屏幕上的拖拽坐标位置。 |
 | `phone_stickers` | JSON 字符串 | 自定义表情包库映射字典。 |
 | `phone_data` | SillyTavern 变量 | 存储手机内所有角色、群聊、用户资料、背景图库、音乐列表的完整状态树。 |
+| `phone_display_settings` | JSON 字符串 | 手机显示与存储设置（含 `useChatVariables`、`appendToLastMessage`、`chatAppendToLastMessage`、`historyReadCount` 等）。 |
+| `$phone_blocks`（聊天变量） | SillyTavern 聊天变量 | P41 聊天变量存储模式：手机块（`<chat_history>`/`<phone_module>` 原文）的字符串数组，随聊天文件导出。`$` 前缀使酒馆助手宏忽略该键，不进入任何提示词。 |
 
 ---
 
@@ -141,9 +143,10 @@
 该插件运行在 SillyTavern 前端环境，通过全局变量与酒馆通信：
 
 * `getVariables({ type: 'character' })`：读取当前绑定角色的自定义变量（如 `phone_data`）。
+* `getVariables({ type: 'chat' })` / `insertOrAssignVariables({ $phone_blocks: [...] }, { type: 'chat' })`：P41 聊天变量存储模式的读写入口。
 * `replaceVariables(data, { type: 'character' })`：持久化写回角色变量。
-* `getChatMessages(messageId)`：读取指定楼层的聊天记录内容。
-* `setChatMessages([{ message_id, message }])`：修改指定楼层的聊天消息。
-* `deleteChatMessages([messageId])`：删除指定楼层。
+* `getChatMessages(messageId)`：读取指定楼层的聊天记录内容（P41 兼容层已接管：范围查询末尾拼接 `$phone_blocks` 虚拟楼层，单 id ≥ 1e9 返回虚拟楼层）。
+* `setChatMessages([{ message_id, message }])`：修改指定楼层的聊天消息（P41 兼容层已接管：真实楼层无块时新增块重定向到聊天变量；哨兵 id ≥ 1e9 就地更新变量块；旧楼层数据就地更新透传）。
+* `deleteChatMessages([messageId])`：删除指定楼层（P41 兼容层已接管：哨兵 id 删除对应聊天变量块）。
 * `eventOn(tavern_events.CHAT_CHANGED, callback)`：监听酒馆切换角色/聊天事件。
 * `eventOn(tavern_events.GENERATION_ENDED, callback)`：监听 AI 生成结束事件（用于自动回复触发器）。

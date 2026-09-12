@@ -22,6 +22,8 @@ const skipCompile = new Set([
   'P27_other_settings_preset_button',          // render 表达式流片段，由最终产物断言验证
   'P28_boot_hide_ready_notification',          // boot 表达式流片段，由最终产物断言验证
   'P29_boot_disable_automatic_regex_import',   // boot 表达式流片段，由最终产物断言验证
+  'P40_settings_render_聊天隐藏变量开关',        // render 前缀插入片段（不闭合），由最终产物断言验证
+  'P41_boot_聊天变量存储兼容层',                 // boot await 前缀片段（不闭合），由沙箱 C 组测试证明
 ]);
 for (const r of replacements) {
   if (skipCompile.has(r.name) || r.name.startsWith('P24_')) { console.log(`  ≈ ${r.name}（由最终产物断言证明）`); continue; }
@@ -108,6 +110,12 @@ checks.push(
   ['所有运行时生图入口显示 ComfyUI 标签', legacyImageEntryLabels.length === 0 && comfyImageEntryLabels.length === 7],
   ['所有运行时生图入口读取 comfyui 配置', comfyImageEntryConfigs.length === 7],
   ['所有运行时生图入口对 ComfyUI 仅校验 URL', comfyUrlOnlyChecks.length === 7],
+  ['聊天变量存储兼容层已注入', fixed.includes('/*__PHONE_VAR_STORAGE_START__*/') && fixed.includes('globalThis.__improvedPhoneVarStorageInstall=install')],
+  ['聊天变量键为 $phone_blocks（宏不可见）', fixed.includes("const VAR_KEY='$phone_blocks'")],
+  ['设置默认开启聊天变量存储', fixed.includes('useChatVariables:!0')],
+  ['两处设置合并均含 useChatVariables', (fixed.match(/useChatVariables:n\.useChatVariables\?\?r\.useChatVariables/g) || []).length === 2],
+  ['设置页含聊天隐藏变量开关', fixed.includes('内容存入聊天隐藏变量') && fixed.includes("a('useChatVariables',ucv.value)")],
+  ['新开关不占用渲染缓存槽位', fixed.includes("'onUpdate:modelValue':e=>ucv.value=e")],
 );
 for (const [name, ok] of checks) {
   if (ok) { pass++; console.log(`  ✓ ${name}`); }

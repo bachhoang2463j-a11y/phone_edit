@@ -198,6 +198,112 @@ const replacements = [
     from: "const v='删最后一块';replaceScriptButtons([{name:'手机',visible:!0},{name:v,visible:!0},{name:'复位',visible:!0},{name:'刷新',visible:!0}]);",
     to: "const v='删最后一块';replaceScriptButtons([{name:'手机',visible:!0},{name:v,visible:!1},{name:'复位',visible:!1},{name:'刷新',visible:!1}]);",
   },
+
+  // ============ 聊天隐藏变量存储模式（P34-P41） ============
+  {
+    name: 'P34_settings_默认值加useChatVariables',
+    from: "r={showOnInit:!0,showFloatingButton:!1,appendToLastMessage:!1,chatAppendToLastMessage:!1,historyReadCount:100,emitGenerationEnded:!1,controlsInNotchArea:!1,useDateTimeVariables:!1,dateVariableBinding:null,timeVariableBinding:null},i=(0,a.ref)({...r});",
+    to: "r={showOnInit:!0,showFloatingButton:!1,appendToLastMessage:!1,chatAppendToLastMessage:!1,historyReadCount:100,emitGenerationEnded:!1,controlsInNotchArea:!1,useDateTimeVariables:!1,dateVariableBinding:null,timeVariableBinding:null,useChatVariables:!0},i=(0,a.ref)({...r});",
+  },
+  {
+    name: 'P35_settings_加载合并加useChatVariables',
+    from: "i.value={showOnInit:n.showOnInit??r.showOnInit,showFloatingButton:n.showFloatingButton??r.showFloatingButton,appendToLastMessage:n.appendToLastMessage??r.appendToLastMessage,chatAppendToLastMessage:n.chatAppendToLastMessage??r.chatAppendToLastMessage,historyReadCount:n.historyReadCount??r.historyReadCount,emitGenerationEnded:n.emitGenerationEnded??r.emitGenerationEnded,controlsInNotchArea:n.controlsInNotchArea??r.controlsInNotchArea,useDateTimeVariables:n.useDateTimeVariables??r.useDateTimeVariables,dateVariableBinding:n.dateVariableBinding??r.dateVariableBinding,timeVariableBinding:n.timeVariableBinding??r.timeVariableBinding}",
+    to: "i.value={showOnInit:n.showOnInit??r.showOnInit,showFloatingButton:n.showFloatingButton??r.showFloatingButton,appendToLastMessage:n.appendToLastMessage??r.appendToLastMessage,chatAppendToLastMessage:n.chatAppendToLastMessage??r.chatAppendToLastMessage,historyReadCount:n.historyReadCount??r.historyReadCount,emitGenerationEnded:n.emitGenerationEnded??r.emitGenerationEnded,controlsInNotchArea:n.controlsInNotchArea??r.controlsInNotchArea,useDateTimeVariables:n.useDateTimeVariables??r.useDateTimeVariables,dateVariableBinding:n.dateVariableBinding??r.dateVariableBinding,timeVariableBinding:n.timeVariableBinding??r.timeVariableBinding,useChatVariables:n.useChatVariables??r.useChatVariables}",
+  },
+  {
+    name: 'P36_settings_快照合并加useChatVariables',
+    from: "return{showOnInit:n.showOnInit??r.showOnInit,showFloatingButton:n.showFloatingButton??r.showFloatingButton,appendToLastMessage:n.appendToLastMessage??r.appendToLastMessage,chatAppendToLastMessage:n.chatAppendToLastMessage??r.chatAppendToLastMessage,historyReadCount:n.historyReadCount??r.historyReadCount,emitGenerationEnded:n.emitGenerationEnded??r.emitGenerationEnded,controlsInNotchArea:n.controlsInNotchArea??r.controlsInNotchArea,useDateTimeVariables:n.useDateTimeVariables??r.useDateTimeVariables,dateVariableBinding:n.dateVariableBinding??r.dateVariableBinding,timeVariableBinding:n.timeVariableBinding??r.timeVariableBinding}",
+    to: "return{showOnInit:n.showOnInit??r.showOnInit,showFloatingButton:n.showFloatingButton??r.showFloatingButton,appendToLastMessage:n.appendToLastMessage??r.appendToLastMessage,chatAppendToLastMessage:n.chatAppendToLastMessage??r.chatAppendToLastMessage,historyReadCount:n.historyReadCount??r.historyReadCount,emitGenerationEnded:n.emitGenerationEnded??r.emitGenerationEnded,controlsInNotchArea:n.controlsInNotchArea??r.controlsInNotchArea,useDateTimeVariables:n.useDateTimeVariables??r.useDateTimeVariables,dateVariableBinding:n.dateVariableBinding??r.dateVariableBinding,timeVariableBinding:n.timeVariableBinding??r.timeVariableBinding,useChatVariables:n.useChatVariables??r.useChatVariables}",
+  },
+  {
+    // 锚点位于 P26 注入的预置资源 ref 链（原 b=...,{otherSettings} 段已被 P26 改写）
+    name: 'P37_settings_script_新增ref_ucv',
+    from: "b=(0,i.ref)(!1),P=(0,i.ref)(!1)",
+    to: "b=(0,i.ref)(!1),ucv=(0,i.ref)(!0),P=(0,i.ref)(!1)",
+  },
+  {
+    name: 'P38_settings_script_onMounted初始化_ucv',
+    from: "A.value=n.value.emitGenerationEnded,C.value=n.value.controlsInNotchArea,(0,p.qQ)()",
+    to: "A.value=n.value.emitGenerationEnded,C.value=n.value.controlsInNotchArea,ucv.value=!1!==n.value.useChatVariables,(0,p.qQ)()",
+  },
+  {
+    name: 'P39_settings_script_保存handler_kcv',
+    from: "k=()=>{a('chatAppendToLastMessage',l.value)}",
+    to: "k=()=>{a('chatAppendToLastMessage',l.value)},kcv=()=>{a('useChatVariables',ucv.value)}",
+  },
+  {
+    name: 'P40_settings_render_聊天隐藏变量开关',
+    from: "(0,i.createElementVNode)('div',AO,[n[21]||(n[21]=",
+    to: "(0,i.createElementVNode)('div',AO,[(0,i.createStaticVNode)('<div class=\"config-label\" data-v-6b3de77b><div class=\"config-icon icon-append\" data-v-6b3de77b><i class=\"fas fa-database\" data-v-6b3de77b></i></div><div class=\"config-text\" data-v-6b3de77b><span class=\"config-name\" data-v-6b3de77b>内容存入聊天隐藏变量</span><span class=\"config-desc\" data-v-6b3de77b>手机内容保存为聊天隐藏变量，不写入楼层（推荐）</span></div></div>',1),(0,i.createElementVNode)('label',dO,[(0,i.withDirectives)((0,i.createElementVNode)('input',{'onUpdate:modelValue':e=>ucv.value=e,type:'checkbox',onChange:kcv},null,544),[[i.vModelCheckbox,ucv.value]]),(0,i.createElementVNode)('span',{class:'toggle-slider'},null,-1))]),(0,i.createElementVNode)('div',AO,[n[21]||(n[21]=",
+  },
+  {
+    name: 'P41_boot_聊天变量存储兼容层',
+    from: "await new Promise(e=>setTimeout(e,50))}let n='';",
+    to: String.raw`await new Promise(e=>setTimeout(e,50))}/*__PHONE_VAR_STORAGE_START__*/(function(){
+'use strict';
+const VAR_KEY='$phone_blocks',SENTINEL=1e9,LS_KEY='phone_display_settings';
+const BLOCK_RE=/<(chat_history|phone_module)\b[^>]*>[\s\S]*?<\/\1>/g;
+function modeOn(){try{const e=localStorage.getItem(LS_KEY);if(!e)return!0;const n=JSON.parse(e);return!1!==n.useChatVariables}catch(e){return!0}}
+function readBlocks(){try{const v=getVariables({type:'chat'})||{},b=v[VAR_KEY];return Array.isArray(b)?b.filter(function(x){return'string'==typeof x}):[]}catch(e){return console.warn('[PhoneVarStorage] 读取聊天变量失败:',e),[]}}
+function writeBlocks(b){insertOrAssignVariables({[VAR_KEY]:b},{type:'chat'})}
+function extractBlocks(e){const n=[],r=new RegExp(BLOCK_RE.source,'g');let t;const a=String(e||'');while(null!==(t=r.exec(a)))n.push(t[0]);return n}
+function vmsg(e,n){return{message_id:SENTINEL+n,name:'手机',role:'assistant',is_hidden:!0,message:e,data:{},extra:{}}}
+function parseSingleId(e){if('number'==typeof e&&Number.isFinite(e))return e;const n=String(e).trim();if(/^-?\d+$/.test(n))return parseInt(n,10);const m=n.match(/^(\d+)-\1$/);return m?parseInt(m[1],10):null}
+function install(){
+const g=globalThis;
+if(g.__improvedPhoneVarStorageInstalled)return!0;
+if('function'!=typeof g.getChatMessages||'function'!=typeof g.setChatMessages||'function'!=typeof g.createChatMessages||'function'!=typeof g.deleteChatMessages||'function'!=typeof g.getVariables||'function'!=typeof g.insertOrAssignVariables)return console.warn('[PhoneVarStorage] 酒馆助手 API 不完整，跳过兼容层安装'),!1;
+const names=['getChatMessages','setChatMessages','createChatMessages','deleteChatMessages'];
+for(const nm of names){const d=Object.getOwnPropertyDescriptor(g,nm);if(d&&!0!==d.writable&&!0!==d.set)return console.warn('[PhoneVarStorage] '+nm+' 不可重写，跳过兼容层安装'),!1}
+const origGet=g.getChatMessages,origSet=g.setChatMessages,origCreate=g.createChatMessages,origDel=g.deleteChatMessages;
+g.getChatMessages=function(e,n){try{
+if(!modeOn())return origGet(e,n);
+const id=parseSingleId(e);
+if(null!==id){if(id>=SENTINEL){const b=readBlocks(),i=id-SENTINEL;return i>=0&&i<b.length?[vmsg(b[i],i)]:[]}return origGet(e,n)}
+let r=origGet(e,n);
+if(!Array.isArray(r))return r;
+const o=n||{};let virts=readBlocks().map(vmsg);
+if(virts.length){
+if(o.role&&'all'!==o.role)virts=virts.filter(function(x){return x.role===o.role});
+if('hidden'===o.hide_state)virts=virts.filter(function(x){return x.is_hidden});
+else if('unhidden'===o.hide_state)virts=virts.filter(function(x){return!x.is_hidden});
+if(o.include_swipes)virts=virts.map(function(x){return Object.assign({},x,{swipe_id:0,swipes:[x.message],swipes_data:[{}],swipes_info:[{}]})});
+r=r.concat(virts)}
+return r}catch(r){return console.warn('[PhoneVarStorage] getChatMessages 兼容失败，回退原函数:',r),origGet(e,n)}};
+g.setChatMessages=function(e,n){return Promise.resolve().then(function(){
+if(!modeOn())return origSet(e,n);
+const pass=[],sent=[];
+for(const it of e||[]){
+const id=it&&'number'==typeof it.message_id?it.message_id:null;
+if(null!==id&&id>=SENTINEL){sent.push(it);continue}
+const nb=extractBlocks(it&&it.message);
+if(!nb.length){pass.push(it);continue}
+let ot='';try{const rows=origGet(String(id));rows&&rows.length&&(ot=String(rows[0].message||''))}catch(x){}
+const ob=extractBlocks(ot);
+if(ob.length>=nb.length){pass.push(it);continue}
+const pool=ob.slice(),added=nb.filter(function(b){const i=pool.indexOf(b);return i>=0?(pool.splice(i,1),!1):!0});
+if(added.length){const arr=readBlocks();for(const b of added)arr.push(b);writeBlocks(arr),console.info('[PhoneVarStorage] 已将 '+added.length+' 个手机块写入聊天变量（原楼层保持不变）');continue}
+pass.push(it)}
+if(sent.length){sent.sort(function(a,b){return b.message_id-a.message_id});const arr=readBlocks();let changed=!1;for(const it of sent){const i=it.message_id-SENTINEL;if(i<0||i>=arr.length)continue;const nb=extractBlocks(it.message);if(nb.length)arr[i]!==nb[nb.length-1]&&(arr[i]=nb[nb.length-1],changed=!0);else arr.splice(i,1),changed=!0}changed&&writeBlocks(arr)}
+if(pass.length)return origSet(pass,n)})};
+g.createChatMessages=function(e,n){return Promise.resolve().then(function(){
+if(!modeOn())return origCreate(e,n);
+const toCreate=[];let stored=0;
+for(const it of e||[]){const nb=extractBlocks(it&&it.message);if(nb.length){const arr=readBlocks();for(const b of nb)arr.push(b);writeBlocks(arr),stored+=nb.length}else toCreate.push(it)}
+if(stored)console.info('[PhoneVarStorage] 已将 '+stored+' 个手机块写入聊天变量，跳过楼层创建');
+if(toCreate.length)return origCreate(toCreate,n)})};
+g.deleteChatMessages=function(e,n){return Promise.resolve().then(function(){
+if(!modeOn())return origDel(e,n);
+const real=[],idx=[];
+for(const id of e||[]){if('number'==typeof id&&id>=SENTINEL)idx.push(id-SENTINEL);else real.push(id)}
+if(idx.length){const arr=readBlocks();idx.sort(function(a,b){return b-a});for(const i of idx)if(i>=0&&i<arr.length)arr.splice(i,1);writeBlocks(arr)}
+if(real.length)return origDel(real,n)})};
+g.__improvedPhoneVarStorageInstalled=!0;
+return console.info('[PhoneVarStorage] 聊天变量存储兼容层已安装'),!0}
+globalThis.__improvedPhoneVarStorageInstall=install;
+try{install()}catch(e){console.warn('[PhoneVarStorage] 兼容层安装失败，回退楼层模式:',e)}
+})();/*__PHONE_VAR_STORAGE_END__*/let n='';`,
+  },
 ];
 
 // ---------------------------------------------------------------- 执行
