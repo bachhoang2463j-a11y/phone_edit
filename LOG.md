@@ -112,3 +112,10 @@
 - **设置**：P34-P36 在设置默认值/加载合并/快照三处新增 `useChatVariables:!0`（默认开）；P37-P39 在 OtherSettings 增加 `ucv` ref 与保存 handler；P40 在"追加到最后楼层"开关前渲染"内容存入聊天隐藏变量"开关（不占用 n[] 缓存槽位）。
 - **验证**：`tests/validate.cjs` 67 项（新增兼容层注入、$phone_blocks 键、三处合并、新开关等 6 项断言）、`tests/sandbox.test.cjs` 45 项（新增 C 组 22 项：重定向、虚拟楼层拼接、哨兵单查/更新/删除、旧数据透传、无块透传、模式关闭、幂等安装）全部通过，`node --check` 通过；产物已部署至 `D:\SillyTavern\SillyTavern\public\scripts\phone_index.js`。
 - **已知边界**：CHAT_CHANGED 切卡整页重载与存储方式无关、保持不变；Ab隐藏手机1/2 正则在变量模式下不再需要；手机自身 AI 调用的历史上下文仍含手机块（getChatMessages 兼容层拼接）。
+# [2026-09-12] 修复 P40 右括号错误导致整包解析失败（手机不显示）
+
+- **现象**：P34-P41 部署后点【手机】按钮无反应。排障（chrome-devtools）确认：手机模块在 Chrome 抛 `Uncaught SyntaxError: Unexpected token ')'` 整体解析失败——按钮仅为酒馆助手持久化残留，事件绑定未生效。
+- **根因**：P40 注入的"聊天隐藏变量"开关渲染片段结尾 `null,-1))])` 抄自原版 `n[20]||(n[20]=...)` 缓存结构的收尾，但新版无该缓存包装，多出一个 `)` 且少一个 `]`，在 label 子元素数组未闭合处关闭外层括号。
+- **校验漏洞**（两处均未拦截）：`node --check` 对本工程单行 ESM 大文件假阴性；`validate.cjs` 配平扫描在 byte 22565 处因原版正则字面量误判提前 break，扫描不到 370 万字节后的插入点。
+- **修复**：P40 收尾改为 `null,-1)])])`；`validate.cjs` 新增 2.5 节"剥离 import 后 new Function 全 bundle 编译检查"（原版基准已验证可通过、无误报）作为可靠语法门禁；README 验证命令同步说明。
+- **验证**：validate 68 项、沙箱 45 项通过；实机（调试 Chrome）验证：模块正常加载、`[PhoneVarStorage] 兼容层已安装` 日志出现、Vue 应用挂载（improved-phone-shadow-host 宿主出现）、点击【手机】界面完整渲染、包装后的 getChatMessages 范围/哨兵查询行为正确、与既有聊天变量键（$mms_roster 等）共存无冲突。
