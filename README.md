@@ -82,5 +82,6 @@ ComfyUI 配置和保存逻辑仍位于压缩模块 920，生图分发位于模�
 node scripts/patch_comfyui.cjs
 node tests/validate.cjs
 node tests/sandbox.test.cjs
-node --check phone_index_fixed.js
 ```
+
+注意：`node --check phone_index_fixed.js` 对本工程的单行 ESM 大文件存在假阴性（曾放过一处右括号错误导致整包在 Chrome 解析失败），不可作为语法门禁；`tests/validate.cjs` 第 2.5 节的"剥离 import 后 new Function 全 bundle 编译检查"才是可靠门禁。

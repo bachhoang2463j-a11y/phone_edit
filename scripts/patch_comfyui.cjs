@@ -234,7 +234,7 @@ const replacements = [
   {
     name: 'P40_settings_render_聊天隐藏变量开关',
     from: "(0,i.createElementVNode)('div',AO,[n[21]||(n[21]=",
-    to: "(0,i.createElementVNode)('div',AO,[(0,i.createStaticVNode)('<div class=\"config-label\" data-v-6b3de77b><div class=\"config-icon icon-append\" data-v-6b3de77b><i class=\"fas fa-database\" data-v-6b3de77b></i></div><div class=\"config-text\" data-v-6b3de77b><span class=\"config-name\" data-v-6b3de77b>内容存入聊天隐藏变量</span><span class=\"config-desc\" data-v-6b3de77b>手机内容保存为聊天隐藏变量，不写入楼层（推荐）</span></div></div>',1),(0,i.createElementVNode)('label',dO,[(0,i.withDirectives)((0,i.createElementVNode)('input',{'onUpdate:modelValue':e=>ucv.value=e,type:'checkbox',onChange:kcv},null,544),[[i.vModelCheckbox,ucv.value]]),(0,i.createElementVNode)('span',{class:'toggle-slider'},null,-1))]),(0,i.createElementVNode)('div',AO,[n[21]||(n[21]=",
+    to: "(0,i.createElementVNode)('div',AO,[(0,i.createStaticVNode)('<div class=\"config-label\" data-v-6b3de77b><div class=\"config-icon icon-append\" data-v-6b3de77b><i class=\"fas fa-database\" data-v-6b3de77b></i></div><div class=\"config-text\" data-v-6b3de77b><span class=\"config-name\" data-v-6b3de77b>内容存入聊天隐藏变量</span><span class=\"config-desc\" data-v-6b3de77b>手机内容保存为聊天隐藏变量，不写入楼层（推荐）</span></div></div>',1),(0,i.createElementVNode)('label',dO,[(0,i.withDirectives)((0,i.createElementVNode)('input',{'onUpdate:modelValue':e=>ucv.value=e,type:'checkbox',onChange:kcv},null,544),[[i.vModelCheckbox,ucv.value]]),(0,i.createElementVNode)('span',{class:'toggle-slider'},null,-1)])]),(0,i.createElementVNode)('div',AO,[n[21]||(n[21]=",
   },
   {
     name: 'P41_boot_聊天变量存储兼容层',

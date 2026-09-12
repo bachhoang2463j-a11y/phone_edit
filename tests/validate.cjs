@@ -78,6 +78,16 @@ console.log(`  fixed: depth=${r2.depth} bad=${r2.bad || '无'}`);
 if (!r2.bad || (r1.bad && r2.bad && r1.bad === r2.bad)) { pass++; console.log('  ✓ fixed 未引入新不平衡（与 original 一致）'); }
 else { fail++; console.log('  ✗ fixed 存在 original 没有的不平衡'); }
 
+// 2.5) 全 bundle 编译检查。
+// node --check 对本文件存在假阴性（ESM 单行大文件），配平扫描在负深度处提前 break 也扫不到尾部插入点；
+// 唯一可靠门禁：剥离顶层 import 后 new Function 整体编译（原版基准已验证可通过，无误报）。
+console.log('== 2.5) 全 bundle 编译检查（剥离 import 后 new Function） ==');
+{
+  const strippedBundle = fixed.replace(/^import[\s\S]*?from\s*['"][^'"]*['"];?/gm, '');
+  try { new Function(strippedBundle); pass++; console.log('  ✓ 全 bundle 语法编译通过'); }
+  catch (e) { fail++; console.log('  ✗ 全 bundle 语法编译失败: ' + e.message); }
+}
+
 console.log('== 3) ComfyUI 保存卡死回归约束 ==');
 const checks = [
   ['ComfyUI 分支有稳定 key', fixed.includes("{key:'comfyui',class:'settings-section'" )],
