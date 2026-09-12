@@ -105,3 +105,10 @@
 - **根因**：bundle 尾部启动时无条件执行 `replaceScriptButtons` 注册四个按钮；`CHAT_CHANGED` 监听在切换角色卡后整页重载并重新注册，运行时手动删除必然被覆盖。
 - **修复**：新增 P33，将三个辅助按钮 `visible:!0` 改为 `visible:!1`（保留数组项以维持 `getButtonEvent` 绑定，避免中断 bootstrap 初始化），【手机】按钮保持可见。
 - **验证**：`tests/validate.cjs` 55 项、`tests/sandbox.test.cjs` 23 项全部通过，`node --check phone_index_fixed.js` 通过；产物已部署至 `D:\SillyTavern\SillyTavern\public\scripts\phone_index.js` 并确认补丁生效。
+# [2026-09-12] 新增聊天隐藏变量存储模式（P34-P41）
+
+- **动机**：用户不希望手机内容写入最后一楼或新楼层（污染正文、依赖折叠正则），要求改为存入隐藏的聊天变量并设为默认，且与原有两种楼层模式可切换；主对话 AI 不需要看到手机内容块。
+- **方案**：写点分散 15+ 处且 bundle 混淆，改为启动尾部注入兼容层（P41）：接管 getChatMessages/setChatMessages/createChatMessages/deleteChatMessages 四个全局 API。写入含手机块时重定向到聊天变量 `$phone_blocks`（type:'chat'，宏忽略 `$` 前缀键，不进提示词）；范围查询在真实结果末尾拼接虚拟楼层（message_id 自 1e9 起），现有正则解析零改动；哨兵 id 支持定点更新与删除；旧楼层数据就地更新透传、兼容读取；无块消息（跳转时间等）透传建楼；模式关闭全透传；安装失败回退楼层模式。
+- **设置**：P34-P36 在设置默认值/加载合并/快照三处新增 `useChatVariables:!0`（默认开）；P37-P39 在 OtherSettings 增加 `ucv` ref 与保存 handler；P40 在"追加到最后楼层"开关前渲染"内容存入聊天隐藏变量"开关（不占用 n[] 缓存槽位）。
+- **验证**：`tests/validate.cjs` 67 项（新增兼容层注入、$phone_blocks 键、三处合并、新开关等 6 项断言）、`tests/sandbox.test.cjs` 45 项（新增 C 组 22 项：重定向、虚拟楼层拼接、哨兵单查/更新/删除、旧数据透传、无块透传、模式关闭、幂等安装）全部通过，`node --check` 通过；产物已部署至 `D:\SillyTavern\SillyTavern\public\scripts\phone_index.js`。
+- **已知边界**：CHAT_CHANGED 切卡整页重载与存储方式无关、保持不变；Ab隐藏手机1/2 正则在变量模式下不再需要；手机自身 AI 调用的历史上下文仍含手机块（getChatMessages 兼容层拼接）。
