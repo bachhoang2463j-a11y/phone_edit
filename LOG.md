@@ -131,3 +131,18 @@
   5. IAB 实机冒烟通过：手机启动/消息列表/设置页/ComfyUI 配置页（节点 ID 等字段齐全）。**冒烟抓到真 bug：运行时缓存声明 `__webpackCache` 与重命名后引用 `__webpackCache__` 错位 → new Function 编译门禁无感、实机 ReferenceError**，已修复并加绑定解析检查防回归。
 - **产物**：`dist/phone_index.js` 已部署至酒馆；源码含 prettier 3 默认 `trailingComma:"all"` 的尾逗号（函数调用尾逗号需 ES2017，原代码已用 `?.`/`catch{}`，运行环境无兼容问题）。
 - **遗留**：UI 仍为 render 函数形态（可编辑），模板逆向按需渐进；VARIABLE_MAP 的 5849/5756 对象属性（`V_.kQ` 等）未重命名（跨模块属性追踪留二期）。
+
+## [20261031-phase2-social] 2026-10-31 - 二期：论坛/动态头像跳私聊携带上下文 + 空间页人设生成
+
+- **调研结论**：三功能大半机制已存在——地图页"跳转私聊"（src/index.js:32287 附近）、浏览器分享的 find-or-create 会话 + pendingShareMessage 注入（5565 附近）、ChatDetail 点头像进空间页（showProfile）与空间动态 AI 生成（fetchDynamicHomeDataFromAi 刷新按钮）。动态"详情"实为帖子卡片内联评论，无独立视图；论坛帖子无头像节点（作者名即入口）。
+- **变更行为**：
+  1. store 新增顶层 `openPrivateChatWith(name, sharePayload)`：合并两处既有跳转逻辑，无会话时按 phone_data 角色新建；`forumJumpWithPost(post, comment)` 组装帖子上下文（含回复扁平化）。
+  2. 动态首页 `se()` 改为携带帖子正文+评论跳私聊（原"打开空间页"入口由私聊头像承接）；论坛首页/ForumPost 作者名加 onClick（withModifiers stop 防冒泡），上下文以 browser-share 消息注入会话，AI 私聊上下文自然可见。
+  3. 模块 112 新增 `fetchCharacterProfileFromAi`：复用 plotCharacters 格式指导生成单人设，解析 `<plot_characters>` 返回首个角色。
+  4. Profile 空间页新增人设卡片（render 函数 + 内联样式）：身份/外观/性格/经历/关系分区，「AI 生成/重新生成」手动按钮，结果持久化到 `phone_data.characters[].profile`。
+  5. 引导兜底：脚本先于聊天恢复加载时（initial chat_id 为空）`initPhone` 被跳过且 CHAT_CHANGED 自愈因"同 id skip reload"失灵（IAB 实测必现，作者原版时序缺陷）——新增轮询等聊天就绪后重载。
+- **事故与教训**：
+  1. A/B 定责实验（排除二期回归）用 `git checkout <commit> -- src/` 往返，**抹掉了未提交的人设编辑**；且 `node tests/validate.cjs | tail` 管道吞掉退出码导致带病提交。重做编辑后 amend 修正；validate 的入口函数声明检查（+4 项）即为该事故的防回归产物。
+  2. IAB 冒烟曾在真实角色卡上 `/go` 模糊匹配，命中同名另一张卡新建了 7KB 空聊天（用户 253 楼完整聊天在 深夜咖啡厅1 卡目录下完好未动）。此后停止在真实聊天上做模糊操作，改用测试卡+合成角色。
+- **验证**：validate 34 项、sandbox 45 项、gate 9 项全过；IAB 实机确认手机挂载/消息页/设置页正常。论坛/动态点击与人设卡片渲染因 IAB 会话中 TavernHelper 按钮容器退化未走完 UI 全链路，逻辑层已由静态断言覆盖，待用户实机复核。
+- **产物**：`368e4c1`（含 17afe91），dist 已部署酒馆。
