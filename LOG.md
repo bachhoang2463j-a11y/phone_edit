@@ -165,3 +165,21 @@
   3. tests/extract.cjs 支持"注释+import+export default"形态的模块文件；沙箱提供 createAvatar/风格对象垫片，D 组断言改为 dataUri 形态（D2 增加缓存只生成一次断言、D5 增加丰富度断言）。
 - **验证**：sandbox 50 项、validate 34 项、gate 9 项全过；dist（4,957,785 B）已部署。
 - **注意**：本次实施中发现并纠正了一次 stash 往返差点覆盖未提交编辑的操作（提交后所有检出往返均安全）。
+
+## [20261101-forum-fix] 2026-11-01 - 排障：论坛作者 [object Object] 渲染损坏 + 兜底头像空白 + 陌生作者私聊
+
+- **背景**：用户实机报障三项——①动态/论坛头像点击跳私聊无反应；②动态随机头像不显示（空圆圈）＋滚动条难看；③论坛详情作者显示 `[object Object],[object Object]` 且右侧露出主屏幕。
+- **根因（全部实测定位）**：
+  1. **③ 主因是 Vue patchFlag 误用**：17afe91 给论坛作者/评论作者节点（双子节点 [图标, 文本]）传了 patchFlag 9（TEXT|PROPS）。Vue 3.5 对带 TEXT 标志的元素更新时直接 `hostSetElementText(el, children)`，children 数组被隐式 String() 化 → 图标 vnode 变 `[object Object]`、图标消失。真实 Vue 复现确认（flag 9 → [object Object]；flag 8 → 正常）。与数据、AI 输出、源码还原均无关（forum CSS 与原版逐字一致）。
+  2. **② DiceBear `toDataUri()` 的 utf8 dataUri 含未编码括号**（SVG 内 rgb() 等，encodeURIComponent 不转义 `!'()*`），塞进无引号 CSS `url(...)` 被截断为无效声明遭浏览器丢弃 → 空圆圈。改 `.toString()` + base64 dataUri（无括号、更短）。
+  3. **① 拦截过严**：`openPrivateChatWith`/`se` 在 `nC()`（phone_data.characters）查不到角色时静默 return——AI 生成的路人作者不在名单，点击永远无反应。同时 **③ 露屏**：forum-post 的 `height:calc(100%+24px);margin-top:-24px` 补偿布局在 content-area 内再溢出 24px，Windows 经典滚动条占 10px 挤压内容宽度（原版 overlay 滚动条环境不可见，故像"还原走样"）。
+- **变更行为**：
+  1. 论坛详情/评论作者节点 patchFlag 9 → 8（PROPS only）。
+  2. 2213 `p()`：toDataUri → toString + base64 dataUri。
+  3. `openPrivateChatWith`：nC 查不到时复用 AddFriend 的 `iL()` 登记新联系人（DiceBear 头像/聊天背景），再取角色建会话——重开手机后会话仍在列表；`se` 允许点击评论头像/昵称跳【评论作者】私聊（原语义为跳帖主），`forumJumpWithPost` 同理以评论作者为目标；自己动态的头像仍走原入口。
+  4. 3396：forum-post 改 `height:100%;min-height:0;box-sizing:border-box`（去 -24px 补偿），post-container 补 min-height:0——详情不再溢出 content-area，Windows 下无滚动条挤压、无露屏。
+  5. **中途撤回的实验性改动**（教训：先抓渲染铁证再动数据层）：作者字段归一化（authorText/Wn）、`__phoneVirtualLastId` 虚拟楼层范围扩展——前者是 patchFlag 真因定位前的误修，后者属"缓存不生效依赖 API"链路，用户明确暂缓。
+- **验证**：新增 `tests/social-regression.cjs`（真实 @vue/runtime-core 自定义渲染器挂真实 ForumPost 组件，验证异步加载/重绘保留姓名与图标并静态抓 patchFlag 违规；真实源码提取 iL/openPrivateChatWith/forumJumpWithPost 验证陌生作者登记幂等、列表重建保留、评论目标正确；真实 @dicebear 包验证 base64/CSS 安全/同名稳定/手动头像优先）。sandbox 50、validate 34、gate 9 全绿。真 Chrome 实测：论坛详情作者"雨夜赶路人"+ 图标正常、详情宽 344=屏宽、外层 scrollHeight 584=clientHeight 无溢出；动态页头像 base64 正常渲染（用户确认）。
+- **事故与教训**：部署新 dist 后手机 iframe 里旧 Vue 组件实例仍存活（TavernHelper 不随脚本替换重建 iframe 内组件），页面表现与磁盘代码不一致——排障必须先 reload 手机 iframe 再取运行时证据（本轮"改了没效果"假象即由此来，耗时段落）。测试注入的 localStorage 缓存（测试甲/测试乙）已恢复原值并清理。
+- **遗留（待用户拍板）**：论坛/动态缓存块存聊天变量（$phone_blocks）但 `getLastMessageId()` 范围不含虚拟楼层 → 缓存永不命中、每次进页都重新调 AI（"存 API 后才有内容"的耦合）。候选方案已调研（读取范围扩展需连动 F/S 写入路径，风险面大），按用户指示暂缓。
+- **产物**：dist（4,957,917 B，md5 4694b1b3）已部署酒馆。
