@@ -555,6 +555,71 @@ const T = (0, i.reactive)({
   pendingShareMessage: null,
   listenTogetherPartner: null,
 });
+// 从论坛/动态等入口按角色名进入私聊；sharePayload 以 browser-share 消息注入会话（AI 上下文可见）。
+// 合并原"地图跳转私聊"与"浏览器分享"两处逻辑：有会话直接切，无会话按 phone_data 角色新建。
+function openPrivateChatWith(rawName, sharePayload) {
+  const name = (0, A.KI)(rawName);
+  if (!name) return !1;
+  const char = (0, A.nC)(name);
+  if (!char) return (console.warn('[Store] 跳转私聊失败，角色不存在:', rawName), !1);
+  const now = new Date(),
+    time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const conv = T.chat.chatList.find((c) => 'single' === c.type && c.name === name);
+  if (conv) T.chat.activeConversationId = conv.id;
+  else {
+    const newConv = {
+      id: char.id || `chat_${Date.now()}`,
+      type: 'single',
+      name,
+      avatar: (0, A.wH)(name) || '',
+      preview: sharePayload?.title ? `[${sharePayload.title}]` : '',
+      time,
+      unread: 0,
+    };
+    T.chat.chatList.unshift(newConv);
+    T.chat.activeConversationId = newConv.id;
+  }
+  sharePayload && (T.pendingShareMessage = sharePayload);
+  T.activeApp = 'chat';
+  return !0;
+}
+// 论坛帖子/评论作者名点击：携带帖子（及所点评论）上下文进入私聊（论坛无头像节点，作者名即入口）
+function forumJumpWithPost(post, comment) {
+  if (!post) return !1;
+  const now = new Date(),
+    time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const lines = [];
+  const body = String(post.content ?? post.c ?? '').trim();
+  body && lines.push(body);
+  if (Array.isArray(post.comments) && post.comments.length) {
+    lines.push('', `评论 ${post.comments.length} 条：`);
+    const flat = [];
+    const walk = (list, depth) =>
+      Array.isArray(list) &&
+      list.forEach((c) => {
+        flat.push({ c, depth });
+        walk(c?.replies, depth + 1);
+      });
+    walk(post.comments, 0);
+    flat.slice(0, 20).forEach(({ c, depth }) => {
+      const who = String(c?.name ?? c?.user ?? '').trim();
+      const text = String(c?.c ?? c?.content ?? c?.text ?? '').trim();
+      const prefix = depth > 0 ? '↳ '.repeat(depth) : '· ';
+      text && lines.push(`${prefix}${who}：${text}`);
+    });
+  }
+  comment && lines.push('', `[正在讨论] ${String(comment.name || '').trim()} 的这条评论`);
+  return openPrivateChatWith(String(post.author ?? post.name ?? '').trim(), {
+    id: Date.now().toString(),
+    type: 'browser-share',
+    title: String(post.title || '').trim() || '论坛帖子',
+    source: '论坛',
+    description: lines.join('\n') || '（无正文）',
+    time,
+    isMe: !0,
+    isNewMessage: !0,
+  });
+}
 function Y() {
   setTimeout(() => {
     ((T.chat.chatList = (0, A.f6)()), console.info('[Store] 聊天列表已加载:', T.chat.chatList.length));
@@ -23252,9 +23317,35 @@ const Zg = (0, vn.A)(Hg, [['__scopeId', 'data-v-0076818b']]),
         oe = () => {
           T.activeApp = 'home';
         },
-        se = (e) => {
-          const n = (0, A.KI)(e);
-          ((g.value = n), (u.value = te(n)), (m.value = !0));
+        se = (post, activeCommentAuthor) => {
+          // 头像/昵称点击：携带帖子（及所点评论）上下文进入私聊，角色可见上下文
+          if (post.isMyPost) return;
+          const canonical = (0, A.KI)(post.name);
+          if (!canonical || !(0, A.nC)(canonical)) return;
+          const now = new Date(),
+            time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+            lines = [];
+          const body = String(post.content ?? post.c ?? post.text ?? '').trim();
+          body && lines.push(body);
+          const comments = Array.isArray(post.comments) ? post.comments : [];
+          comments.length &&
+            (lines.push(''),
+            lines.push(`评论 ${comments.length} 条：`),
+            comments.slice(0, 10).forEach((c) => {
+              const text = String(c?.c ?? c?.content ?? c?.text ?? '').trim();
+              text && lines.push(`· ${(0, A.FI)(j(c))}：${text}`);
+            }));
+          activeCommentAuthor && lines.push('', `[正在讨论] ${(0, A.FI)(activeCommentAuthor)} 的这条评论`);
+          openPrivateChatWith(canonical, {
+            id: Date.now().toString(),
+            type: 'browser-share',
+            title: `${ae(post.name)} 的动态`,
+            source: '动态',
+            description: lines.join('\n') || '（无正文）',
+            time,
+            isMe: !0,
+            isNewMessage: !0,
+          });
         },
         le = () => {
           ((m.value = !1), (g.value = ''), (u.value = ''));
@@ -23537,7 +23628,7 @@ const Zg = (0, vn.A)(Hg, [['__scopeId', 'data-v-0076818b']]),
                                     style: (0, i.normalizeStyle)({
                                       backgroundImage: `url(${te(e.name, e.isMyPost)})`,
                                     }),
-                                    onClick: (n) => !e.isMyPost && se(e.name),
+                                    onClick: (n) => !e.isMyPost && se(e),
                                   },
                                   null,
                                   12,
@@ -23548,7 +23639,7 @@ const Zg = (0, vn.A)(Hg, [['__scopeId', 'data-v-0076818b']]),
                                     'div',
                                     {
                                       class: 'post-name',
-                                      onClick: (n) => !e.isMyPost && se(e.name),
+                                      onClick: (n) => !e.isMyPost && se(e),
                                     },
                                     (0, i.toDisplayString)(ae(e.name, e.isMyPost)),
                                     9,
@@ -23865,7 +23956,7 @@ const Zg = (0, vn.A)(Hg, [['__scopeId', 'data-v-0076818b']]),
                                                   style: (0, i.normalizeStyle)({
                                                     backgroundImage: `url(${te(j(t))})`,
                                                   }),
-                                                  onClick: (e) => se(j(t)),
+                                                  onClick: (n) => se(e, j(t)),
                                                 },
                                                 null,
                                                 12,
@@ -23877,7 +23968,7 @@ const Zg = (0, vn.A)(Hg, [['__scopeId', 'data-v-0076818b']]),
                                                     'span',
                                                     {
                                                       class: 'comment-name',
-                                                      onClick: (e) => se(j(t)),
+                                                      onClick: (n) => se(e, j(t)),
                                                     },
                                                     (0, i.toDisplayString)(ae(j(t))),
                                                     9,
@@ -25829,18 +25920,22 @@ const ab = (0, vn.A)(tb, [['__scopeId', 'data-v-5e7a0852']]),
             (0, i.createElementVNode)('div', lb, [
               (0, i.createElementVNode)('h1', cb, (0, i.toDisplayString)(p.value.title), 1),
               (0, i.createElementVNode)('div', Ab, [
-                (0, i.createElementVNode)('span', db, [
-                  n[8] ||
-                    (n[8] = (0, i.createElementVNode)(
-                      'i',
-                      {
-                        class: 'fas fa-user-circle',
-                      },
-                      null,
-                      -1,
-                    )),
-                  (0, i.createTextVNode)(' ' + (0, i.toDisplayString)(p.value.author), 1),
-                ]),
+                (0, i.createElementVNode)(
+                  'span',
+                  {
+                    class: 'post-author',
+                    style: { cursor: 'pointer' },
+                    onClick: (n) => forumJumpWithPost(p.value),
+                  },
+                  [
+                    (0, i.createElementVNode)('i', {
+                      class: 'fas fa-user-circle',
+                    }),
+                    (0, i.createTextVNode)(' ' + (0, i.toDisplayString)(p.value.author), 1),
+                  ],
+                  9,
+                  ['onClick'],
+                ),
                 (0, i.createElementVNode)('span', pb, [
                   n[9] ||
                     (n[9] = (0, i.createElementVNode)(
@@ -25913,18 +26008,22 @@ const ab = (0, vn.A)(tb, [['__scopeId', 'data-v-5e7a0852']]),
                         },
                         [
                           (0, i.createElementVNode)('div', bb, [
-                            (0, i.createElementVNode)('span', vb, [
-                              n[11] ||
-                                (n[11] = (0, i.createElementVNode)(
-                                  'i',
-                                  {
-                                    class: 'fas fa-user',
-                                  },
-                                  null,
-                                  -1,
-                                )),
-                              (0, i.createTextVNode)(' ' + (0, i.toDisplayString)(e.name), 1),
-                            ]),
+                            (0, i.createElementVNode)(
+                              'span',
+                              {
+                                class: 'comment-author',
+                                style: { cursor: 'pointer' },
+                                onClick: (n) => forumJumpWithPost(p.value, e),
+                              },
+                              [
+                                (0, i.createElementVNode)('i', {
+                                  class: 'fas fa-user',
+                                }),
+                                (0, i.createTextVNode)(' ' + (0, i.toDisplayString)(e.name), 1),
+                              ],
+                              9,
+                              ['onClick'],
+                            ),
                             (0, i.createElementVNode)('span', xb, [
                               n[12] ||
                                 (n[12] = (0, i.createElementVNode)(
@@ -26740,7 +26839,17 @@ const jb = (0, vn.A)(Yb, [['__scopeId', 'data-v-5a4c9f87']]),
                                         (0, i.createElementVNode)('p', nv, (0, i.toDisplayString)(e.content), 1),
                                         (0, i.createElementVNode)('div', tv, [
                                           (0, i.createElementVNode)('div', av, [
-                                            (0, i.createElementVNode)('span', ov, (0, i.toDisplayString)(e.author), 1),
+                                            (0, i.createElementVNode)(
+                                              'span',
+                                              {
+                                                class: 'post-author',
+                                                style: { cursor: 'pointer' },
+                                                onClick: (0, i.withModifiers)((n) => forumJumpWithPost(e), ['stop']),
+                                              },
+                                              (0, i.toDisplayString)(e.author),
+                                              9,
+                                              ['onClick'],
+                                            ),
                                             (0, i.createElementVNode)(
                                               'span',
                                               rv,
@@ -26829,9 +26938,14 @@ const jb = (0, vn.A)(Yb, [['__scopeId', 'data-v-5a4c9f87']]),
                                             (0, i.createElementVNode)('div', mv, [
                                               (0, i.createElementVNode)(
                                                 'span',
-                                                gv,
+                                                {
+                                                  class: 'post-author',
+                                                  style: { cursor: 'pointer' },
+                                                  onClick: (0, i.withModifiers)((n) => forumJumpWithPost(e), ['stop']),
+                                                },
                                                 (0, i.toDisplayString)(e.author),
-                                                1,
+                                                9,
+                                                ['onClick'],
                                               ),
                                               (0, i.createElementVNode)(
                                                 'span',
