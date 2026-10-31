@@ -3,14 +3,14 @@ export default function (e, n, t) {
   t.d(n, {
     AM: () => i,
     jY: () => o,
-    lP: () => r
+    lP: () => r,
   });
   let a = null;
   function o() {
-    return a || (a = new AbortController()), a;
+    return (a || (a = new AbortController()), a);
   }
   function r() {
-    a && (a.abort(), a = null, console.info('[AbortController] AI 请求已终止'));
+    a && (a.abort(), (a = null), console.info('[AbortController] AI 请求已终止'));
   }
   function i() {
     a = null;

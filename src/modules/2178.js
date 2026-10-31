@@ -9,73 +9,86 @@ export default function (e, n, t) {
     MW: () => C,
     Y3: () => i,
     dM: () => d,
-    dp: () => a
+    dp: () => a,
   });
   const a = () => ({
       version: 1,
-      byName: {}
+      byName: {},
     }),
-    o = e => ({
+    o = (e) => ({
       traitsOverrideEnabled: !!e?.traitsOverrideEnabled,
       traitsTags: 'string' == typeof e?.traitsTags ? e.traitsTags : '',
       traitsNatural: 'string' == typeof e?.traitsNatural ? e.traitsNatural : '',
       referenceImageEnabled: !!e?.referenceImageEnabled,
       referenceImage: 'string' == typeof e?.referenceImage ? e.referenceImage : '',
-      updatedAt: 'number' == typeof e?.updatedAt ? e.updatedAt : void 0
+      updatedAt: 'number' == typeof e?.updatedAt ? e.updatedAt : void 0,
     });
   function r(e) {
     const n = o(e);
-    if (!(n.traitsOverrideEnabled || n.referenceImageEnabled || !!String(n.traitsTags || '').trim() || !!String(n.traitsNatural || '').trim() || !!String(n.referenceImage || '').trim())) return null;
+    if (!(
+      n.traitsOverrideEnabled ||
+      n.referenceImageEnabled ||
+      !!String(n.traitsTags || '').trim() ||
+      !!String(n.traitsNatural || '').trim() ||
+      !!String(n.referenceImage || '').trim()
+    ))
+      return null;
     const t = {
       traitsOverrideEnabled: n.traitsOverrideEnabled,
       traitsTags: n.traitsTags,
       traitsNatural: n.traitsNatural,
       referenceImageEnabled: n.referenceImageEnabled,
-      referenceImage: n.referenceImage
+      referenceImage: n.referenceImage,
     };
-    return 'number' == typeof n.updatedAt && (t.updatedAt = n.updatedAt), t;
+    return ('number' == typeof n.updatedAt && (t.updatedAt = n.updatedAt), t);
   }
   const i = () => {
       try {
-        const e = function () {
+        const e = (function () {
           try {
             const e = getVariables({
-                type: 'character'
+                type: 'character',
               }),
               n = e?.phone_data?.characters;
             return Array.isArray(n) ? n : [];
           } catch {
             return [];
           }
-        }();
+        })();
         if (0 === e.length) return a();
         const n = {};
-        return e.forEach(e => {
-          const t = String(e?.name ?? '').trim();
-          if (!t) return;
-          const a = o(e?.imageGen);
-          n[t] = a;
-          const r = String(e?.nickname ?? '').trim();
-          r && !(r in n) && (n[r] = a);
-        }), {
-          version: 1,
-          byName: n
-        };
+        return (
+          e.forEach((e) => {
+            const t = String(e?.name ?? '').trim();
+            if (!t) return;
+            const a = o(e?.imageGen);
+            n[t] = a;
+            const r = String(e?.nickname ?? '').trim();
+            r && !(r in n) && (n[r] = a);
+          }),
+          {
+            version: 1,
+            byName: n,
+          }
+        );
       } catch {
         return a();
       }
     },
-    s = e => {
+    s = (e) => {
       try {
         const n = getVariables({
-            type: 'character'
+            type: 'character',
           }),
-          t = n?.phone_data && 'object' == typeof n.phone_data && !Array.isArray(n.phone_data) ? {
-            ...n.phone_data
-          } : {},
+          t =
+            n?.phone_data && 'object' == typeof n.phone_data && !Array.isArray(n.phone_data)
+              ? {
+                  ...n.phone_data,
+                }
+              : {},
           a = Array.isArray(t.characters) ? t.characters : [];
         if (0 === a.length) return;
-        const o = a.map(n => {
+        const o = a.map((n) => {
           if (!n || 'object' != typeof n) return n;
           const t = String(n?.name ?? '').trim();
           if (!t) return n;
@@ -83,15 +96,19 @@ export default function (e, n, t) {
           if (!a) return n;
           const o = r(a),
             i = {
-              ...n
+              ...n,
             };
-          return o ? i.imageGen = o : delete i.imageGen, i;
+          return (o ? (i.imageGen = o) : delete i.imageGen, i);
         });
-        t.characters = o, insertOrAssignVariables({
-          phone_data: t
-        }, {
-          type: 'character'
-        });
+        ((t.characters = o),
+          insertOrAssignVariables(
+            {
+              phone_data: t,
+            },
+            {
+              type: 'character',
+            },
+          ));
       } catch (e) {
         console.warn('[CharacterPromptOverrides] 保存人物绘图信息失败(忽略):', e);
       }
@@ -100,23 +117,25 @@ export default function (e, n, t) {
   function c() {
     try {
       const e = getVariables({
-          type: 'character'
+          type: 'character',
         }),
         n = e?.phone_data?.user;
-      if (n && 'object' == typeof n) return {
-        name: String(n.name ?? '').trim() || '用户',
-        nickname: n.nickname ? String(n.nickname).trim() : void 0,
-        avatar: n.avatar ? String(n.avatar).trim() : void 0
-      };
+      if (n && 'object' == typeof n)
+        return {
+          name: String(n.name ?? '').trim() || '用户',
+          nickname: n.nickname ? String(n.nickname).trim() : void 0,
+          avatar: n.avatar ? String(n.avatar).trim() : void 0,
+        };
     } catch {}
     try {
       const e = String(window.parent.SillyTavern?.name1 ?? '').trim();
-      if (e) return {
-        name: e
-      };
+      if (e)
+        return {
+          name: e,
+        };
     } catch {}
     return {
-      name: '用户'
+      name: '用户',
     };
   }
   function A() {
@@ -129,7 +148,7 @@ export default function (e, n, t) {
   function p() {
     try {
       const e = getVariables({
-          type: 'character'
+          type: 'character',
         }),
         n = e?.phone_data?.user?.imageGen;
       return o(n);
@@ -140,20 +159,31 @@ export default function (e, n, t) {
   function C(e) {
     try {
       const n = getVariables({
-          type: 'character'
+          type: 'character',
         }),
-        t = n?.phone_data && 'object' == typeof n.phone_data && !Array.isArray(n.phone_data) ? {
-          ...n.phone_data
-        } : {},
-        a = t.user && 'object' == typeof t.user ? {
-          ...t.user
-        } : {},
+        t =
+          n?.phone_data && 'object' == typeof n.phone_data && !Array.isArray(n.phone_data)
+            ? {
+                ...n.phone_data,
+              }
+            : {},
+        a =
+          t.user && 'object' == typeof t.user
+            ? {
+                ...t.user,
+              }
+            : {},
         o = r(e);
-      o ? a.imageGen = o : delete a.imageGen, t.user = a, insertOrAssignVariables({
-        phone_data: t
-      }, {
-        type: 'character'
-      });
+      (o ? (a.imageGen = o) : delete a.imageGen,
+        (t.user = a),
+        insertOrAssignVariables(
+          {
+            phone_data: t,
+          },
+          {
+            type: 'character',
+          },
+        ));
     } catch (e) {
       console.warn('[CharacterPromptOverrides] 保存用户绘图信息失败(忽略):', e);
     }
@@ -161,12 +191,21 @@ export default function (e, n, t) {
   function m() {
     const e = i(),
       n = p();
-    return function () {
-      const e = c(),
-        n = new Set();
-      return e.name && n.add(e.name), e.nickname && n.add(e.nickname), n.add('{{user}}'), n.add('用户'), Array.from(n);
-    }().forEach(t => {
-      e.byName[t] = n;
-    }), e;
+    return (
+      (function () {
+        const e = c(),
+          n = new Set();
+        return (
+          e.name && n.add(e.name),
+          e.nickname && n.add(e.nickname),
+          n.add('{{user}}'),
+          n.add('用户'),
+          Array.from(n)
+        );
+      })().forEach((t) => {
+        e.byName[t] = n;
+      }),
+      e
+    );
   }
 }

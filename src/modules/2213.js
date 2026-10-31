@@ -19,7 +19,7 @@ export default function (e, n, t) {
     sd: () => G,
     uk: () => M,
     wH: () => C,
-    xd: () => W
+    xd: () => W,
   });
   var a = t(7856),
     o = t.n(a),
@@ -30,21 +30,26 @@ export default function (e, n, t) {
     c = t(9852);
   function A() {
     try {
-      const e = getVariables({
-          type: 'character'
-        }) || {},
+      const e =
+          getVariables({
+            type: 'character',
+          }) || {},
         n = i().get(e, 'phone_data');
-      if (n && Array.isArray(n.characters)) return {
-        characters: n.characters,
-        randomAvatars: n.randomAvatars || []
-      };
+      if (n && Array.isArray(n.characters))
+        return {
+          characters: n.characters,
+          randomAvatars: n.randomAvatars || [],
+        };
     } catch (e) {
       console.warn('[Data] 无法从角色变量读取基本信息:', e);
     }
-    return console.info('[Data] 使用示例数据'), {
-      characters: l.hg || [],
-      randomAvatars: l.I1 || []
-    };
+    return (
+      console.info('[Data] 使用示例数据'),
+      {
+        characters: l.hg || [],
+        randomAvatars: l.I1 || [],
+      }
+    );
   }
   function d() {
     return A().randomAvatars || [];
@@ -61,16 +66,15 @@ export default function (e, n, t) {
     return t?.avatar ? t.avatar : p(e);
   }
   function m(e) {
-    const {
-      characters: n
-    } = A();
-    return n?.find(n => n.name === e) || n?.find(n => n.nickname === e);
+    const { characters: n } = A();
+    return n?.find((n) => n.name === e) || n?.find((n) => n.nickname === e);
   }
   function g(e) {
     try {
-      const n = getVariables({
-          type: 'character'
-        }) || {},
+      const n =
+          getVariables({
+            type: 'character',
+          }) || {},
         t = i().get(n, 'phone_data.user');
       if (t && (t.name === e || t.nickname === e)) return t;
     } catch (e) {
@@ -81,39 +85,45 @@ export default function (e, n, t) {
     const n = m(e);
     if (n) return n.nickname || n.name || e;
     const t = g(e);
-    return t && (t.nickname || t.name) || e;
+    return (t && (t.nickname || t.name)) || e;
   }
   function f(e) {
     return m(e)?.name || e;
   }
   const b = s;
   function v(e) {
-    return Array.isArray(e) ? e.filter(e => {
-      const n = 'string' == typeof e?.name ? e.name.trim() : '',
-        t = 'string' == typeof e?.url ? e.url.trim() : '';
-      return Boolean(n && t);
-    }).map(e => ({
-      name: e.name.trim(),
-      url: e.url.trim()
-    })) : [];
+    return Array.isArray(e)
+      ? e
+          .filter((e) => {
+            const n = 'string' == typeof e?.name ? e.name.trim() : '',
+              t = 'string' == typeof e?.url ? e.url.trim() : '';
+            return Boolean(n && t);
+          })
+          .map((e) => ({
+            name: e.name.trim(),
+            url: e.url.trim(),
+          }))
+      : [];
   }
   function x() {
     try {
-      const e = getVariables({
-        type: 'global'
-      }) || {};
+      const e =
+        getVariables({
+          type: 'global',
+        }) || {};
       return !0 === i().get(e, 'phone_use_global_sticker_library');
     } catch {
       return !1;
     }
   }
   function h() {
-    const e = function () {
+    const e = (function () {
       if (x()) {
         try {
-          const e = getVariables({
-              type: 'global'
-            }) || {},
+          const e =
+              getVariables({
+                type: 'global',
+              }) || {},
             n = v(i().get(e, 'phone_global_sticker_library'));
           if (n.length > 0) return n;
         } catch (e) {
@@ -123,7 +133,7 @@ export default function (e, n, t) {
       }
       try {
         const e = getVariables({
-            type: 'character'
+            type: 'character',
           }),
           n = v(i().get(e, 'phone_sticker_library'));
         if (n.length > 0) return n;
@@ -131,41 +141,43 @@ export default function (e, n, t) {
         console.warn('[Data] 获取保存的表情包库失败:', e);
       }
       return b;
-    }();
+    })();
     if (x()) return e;
-    const n = function () {
+    const n = (function () {
         try {
           const e = getVariables({
-              type: 'character'
+              type: 'character',
             }),
             n = i().get(e, 'phone_character_sticker_library');
           return n && 'object' == typeof n ? n : {};
         } catch {
           return {};
         }
-      }(),
-      t = Object.values(n).flat().filter(e => Boolean(e && 'string' == typeof e.name && 'string' == typeof e.url));
+      })(),
+      t = Object.values(n)
+        .flat()
+        .filter((e) => Boolean(e && 'string' == typeof e.name && 'string' == typeof e.url));
     return [...e, ...t];
   }
   function B(e) {
-    const n = h().find(n => n.name === e);
+    const n = h().find((n) => n.name === e);
     return n?.url || null;
   }
   function y(e) {
     if (e.startsWith('http://') || e.startsWith('https://')) return e;
-    const n = function () {
+    const n = (function () {
       try {
         const e = getVariables({
-            type: 'character'
+            type: 'character',
           }),
           n = i().get(e, 'phone_character_images');
         return n && 'object' == typeof n ? n : {};
       } catch {
         return {};
       }
-    }();
+    })();
     for (const t of Object.values(n)) {
-      const n = t.find(n => n.name === e);
+      const n = t.find((n) => n.name === e);
       if (n) return n.url;
     }
     return null;
@@ -173,19 +185,19 @@ export default function (e, n, t) {
   function k(e) {
     if (!e) return null;
     if (e.startsWith('http://') || e.startsWith('https://')) return e;
-    const n = function () {
+    const n = (function () {
       try {
         const e = getVariables({
-            type: 'character'
+            type: 'character',
           }),
           n = i().get(e, 'phone_character_live_images');
         return n && 'object' == typeof n ? n : {};
       } catch {
         return {};
       }
-    }();
+    })();
     for (const t of Object.values(n)) {
-      const n = t.find(n => n.name === e);
+      const n = t.find((n) => n.name === e);
       if (n) return n.url;
     }
     return null;
@@ -194,17 +206,21 @@ export default function (e, n, t) {
     const t = {
       id: `${n + 1}`,
       time: e.time,
-      isMe: e.me ?? !1
+      isMe: e.me ?? !1,
     };
-    switch (e.sender && (t.sender = {
-      name: e.sender.name,
-      avatar: C(e.sender.name)
-    }), e.t) {
+    switch (
+      (e.sender &&
+        (t.sender = {
+          name: e.sender.name,
+          avatar: C(e.sender.name),
+        }),
+      e.t)
+    ) {
       case 'text':
         return {
           ...t,
           type: 'text',
-          content: e.c
+          content: e.c,
         };
       case 'image':
         return {
@@ -212,13 +228,13 @@ export default function (e, n, t) {
           type: 'image',
           content: e.c,
           description: e.desc,
-          prompt: e.prompt ?? null
+          prompt: e.prompt ?? null,
         };
       case 'sticker':
         return {
           ...t,
           type: 'sticker',
-          content: e.c
+          content: e.c,
         };
       case 'imgdesc':
         return {
@@ -226,7 +242,7 @@ export default function (e, n, t) {
           type: 'text-image',
           content: e.c,
           description: e.c,
-          prompt: e.prompt ?? null
+          prompt: e.prompt ?? null,
         };
       case 'voice':
         return {
@@ -234,7 +250,7 @@ export default function (e, n, t) {
           type: 'voice',
           duration: '0:15',
           voiceText: e.c,
-          audioFile: e.audio
+          audioFile: e.audio,
         };
       case 'transfer':
         return {
@@ -242,7 +258,7 @@ export default function (e, n, t) {
           type: 'transfer',
           amount: String(e.amt || '0'),
           note: e.note,
-          transferTime: e.transferTime
+          transferTime: e.transferTime,
         };
       case 'location':
         return {
@@ -250,13 +266,13 @@ export default function (e, n, t) {
           type: 'location',
           partnerLocation: e.partnerLoc,
           userLocation: e.myLoc,
-          distance: e.dist
+          distance: e.dist,
         };
       case 'recalled':
         return {
           ...t,
           type: 'recalled',
-          originalContent: e.orig
+          originalContent: e.orig,
         };
       case 'news':
         return {
@@ -269,7 +285,7 @@ export default function (e, n, t) {
           content: e.content,
           keyData: e.keyData,
           likes: e.likes,
-          comments: e.comments
+          comments: e.comments,
         };
       case 'link':
         return {
@@ -278,7 +294,7 @@ export default function (e, n, t) {
           title: e.title,
           source: e.source,
           description: e.preview,
-          url: e.url
+          url: e.url,
         };
       case 'file':
         return {
@@ -286,74 +302,76 @@ export default function (e, n, t) {
           type: 'file',
           filename: e.name,
           filesize: e.size,
-          description: e.desc
+          description: e.desc,
         };
       case 'quote':
         return {
           ...t,
           type: 'quote',
           content: e.c,
-          quote: e.quote ? {
-            name: e.quote.name,
-            type: e.quote.t,
-            content: e.quote.c
-          } : void 0
+          quote: e.quote
+            ? {
+                name: e.quote.name,
+                type: e.quote.t,
+                content: e.quote.c,
+              }
+            : void 0,
         };
       case 'call':
         return {
           ...t,
           type: 'call',
-          callStatus: e.status || '通话中'
+          callStatus: e.status || '通话中',
         };
       case 'call-ended':
         return {
           ...t,
           type: 'call-ended',
-          duration: e.duration || '0:00'
+          duration: e.duration || '0:00',
         };
       case 'transfer-accepted':
         return {
           ...t,
           type: 'transfer-accepted',
-          amount: String(e.amt || '0')
+          amount: String(e.amt || '0'),
         };
       case 'transfer-rejected':
         return {
           ...t,
           type: 'transfer-rejected',
-          amount: String(e.amt || '0')
+          amount: String(e.amt || '0'),
         };
       case 'poke':
         return {
           ...t,
-          type: 'poke'
+          type: 'poke',
         };
       case 'listen-together':
         return {
           ...t,
-          type: 'listen-together'
+          type: 'listen-together',
         };
       case 'listen-accepted':
         return {
           ...t,
-          type: 'listen-accepted'
+          type: 'listen-accepted',
         };
       case 'listen-rejected':
         return {
           ...t,
-          type: 'listen-rejected'
+          type: 'listen-rejected',
         };
       case 'order':
         return {
           ...t,
           type: 'order',
-          order: e.order || null
+          order: e.order || null,
         };
       default:
         return {
           ...t,
           type: 'text',
-          content: e.c || '[未知消息]'
+          content: e.c || '[未知消息]',
         };
     }
   }
@@ -403,24 +421,38 @@ export default function (e, n, t) {
     }
   }
   function N(e, n) {
-    return 'private' === n ? function (e) {
-      const n = String(e || '').trim();
-      if (!n) return '';
-      if (n.includes(',')) {
-        const e = n.split(',').map(e => e.trim()).filter(Boolean).sort((e, n) => e.localeCompare(n, 'zh-CN'));
-        return 2 === e.length ? `${e[0]},${e[1]}` : e.join(',');
-      }
-      if (n.includes('和')) {
-        const e = n.split('和').map(e => e.trim()).filter(Boolean).sort((e, n) => e.localeCompare(n, 'zh-CN'));
-        if (2 === e.length) return `${e[0]},${e[1]}`;
-      }
-      return n;
-    }(e) : String(e || '').trim();
+    return 'private' === n
+      ? (function (e) {
+          const n = String(e || '').trim();
+          if (!n) return '';
+          if (n.includes(',')) {
+            const e = n
+              .split(',')
+              .map((e) => e.trim())
+              .filter(Boolean)
+              .sort((e, n) => e.localeCompare(n, 'zh-CN'));
+            return 2 === e.length ? `${e[0]},${e[1]}` : e.join(',');
+          }
+          if (n.includes('和')) {
+            const e = n
+              .split('和')
+              .map((e) => e.trim())
+              .filter(Boolean)
+              .sort((e, n) => e.localeCompare(n, 'zh-CN'));
+            if (2 === e.length) return `${e[0]},${e[1]}`;
+          }
+          return n;
+        })(e)
+      : String(e || '').trim();
   }
   function F(e, n) {
     const t = String(n?.kind || '').trim();
     if ('private' === t || 'group' === t) return t;
-    return String(e || '').trim().includes(',') ? 'private' : 'group';
+    return String(e || '')
+      .trim()
+      .includes(',')
+      ? 'private'
+      : 'group';
   }
   function V(e, n) {
     return 'private' === e ? n.replace(',', ' · ') : n;
@@ -444,17 +476,21 @@ export default function (e, n, t) {
             r = a[2],
             i = a[3].trim(),
             s = `${r}:${n}`;
-          if (!e.has(s)) try {
-            const a = o().parse(i);
-            a && a.messages && Array.isArray(a.messages) && e.set(s, {
-              target: n,
-              type: r,
-              messages: a.messages,
-              messageId: t.message_id
-            });
-          } catch (e) {
-            console.warn(`[Data] 解析楼层 ${t.message_id} 的聊天记录失败:`, e);
-          }
+          if (!e.has(s))
+            try {
+              const a = o().parse(i);
+              a &&
+                a.messages &&
+                Array.isArray(a.messages) &&
+                e.set(s, {
+                  target: n,
+                  type: r,
+                  messages: a.messages,
+                  messageId: t.message_id,
+                });
+            } catch (e) {
+              console.warn(`[Data] 解析楼层 ${t.message_id} 的聊天记录失败:`, e);
+            }
         }
         i.lastIndex = 0;
       }
@@ -472,13 +508,14 @@ export default function (e, n, t) {
       for (const e of n.values()) e.messageId > t && (t = e.messageId);
       const a = A().characters || [],
         o = new Set();
-      for (const e of a) e?.name && o.add(String(e.name).trim()), e?.nickname && o.add(String(e.nickname).trim());
+      for (const e of a) (e?.name && o.add(String(e.name).trim()), e?.nickname && o.add(String(e.nickname).trim()));
       try {
-        const e = getVariables({
-            type: 'character'
-          }) || {},
+        const e =
+            getVariables({
+              type: 'character',
+            }) || {},
           n = i().get(e, 'phone_data.user');
-        n?.name && o.add(String(n.name).trim()), n?.nickname && o.add(String(n.nickname).trim());
+        (n?.name && o.add(String(n.name).trim()), n?.nickname && o.add(String(n.nickname).trim()));
       } catch {}
       for (const a of n.values()) {
         if ('private' !== a.type) continue;
@@ -486,7 +523,7 @@ export default function (e, n, t) {
         if (!n) continue;
         if (o.has(n)) continue;
         if (!Array.isArray(a.messages) || 0 === a.messages.length) continue;
-        if (!a.messages.some(e => !e?.me)) continue;
+        if (!a.messages.some((e) => !e?.me)) continue;
         const r = a.messages[a.messages.length - 1],
           i = w(r),
           s = String(r?.time || '').trim() || '00:00';
@@ -497,10 +534,18 @@ export default function (e, n, t) {
           preview: i,
           time: s,
           unread: a.messageId === t,
-          messageId: a.messageId
+          messageId: a.messageId,
         });
       }
-      e.sort((e, n) => e.unread && !n.unread ? -1 : !e.unread && n.unread ? 1 : e.messageId !== n.messageId ? n.messageId - e.messageId : n.time.localeCompare(e.time));
+      e.sort((e, n) =>
+        e.unread && !n.unread
+          ? -1
+          : !e.unread && n.unread
+            ? 1
+            : e.messageId !== n.messageId
+              ? n.messageId - e.messageId
+              : n.time.localeCompare(e.time),
+      );
     } catch (e) {
       console.error('[Data] 读取新朋友列表失败:', e);
     }
@@ -533,12 +578,13 @@ export default function (e, n, t) {
               s = N(n, r);
             if (!s) continue;
             const c = `${r}:${s}`;
-            i.has(c) || i.set(c, {
-              target: s,
-              kind: r,
-              messages: a.messages,
-              messageId: t
-            });
+            i.has(c) ||
+              i.set(c, {
+                target: s,
+                kind: r,
+                messages: a.messages,
+                messageId: t,
+              });
           } catch (e) {
             console.warn(`[Data] 解析楼层 ${t} 的偷看记录失败:`, e);
           }
@@ -553,7 +599,7 @@ export default function (e, n, t) {
           a = w(t),
           o = t?.time || '00:00',
           r = V(n.kind, n.target),
-          i = 'private' === n.kind && n.target.split(',')[0] || n.target;
+          i = ('private' === n.kind && n.target.split(',')[0]) || n.target;
         e.push({
           id: `peek_${n.kind}_${n.target}`,
           kind: n.kind,
@@ -563,7 +609,7 @@ export default function (e, n, t) {
           preview: a,
           time: o,
           unread: n.messageId === l,
-          messageId: n.messageId
+          messageId: n.messageId,
         });
       }
     } catch (e) {
@@ -604,18 +650,18 @@ export default function (e, n, t) {
                 name: a.name || V(n, A),
                 kind: n,
                 date: a.date,
-                time: a.time
+                time: a.time,
               },
               messages: a.messages,
               messageId: r,
-              blockIndex: c.length
+              blockIndex: c.length,
             };
             c.push(d);
           } catch (e) {
             console.warn(`[Data] 解析楼层 ${r} 的偷看记录失败:`, e);
           }
         }
-        d.lastIndex = 0, a.unshift(...c);
+        ((d.lastIndex = 0), a.unshift(...c));
       }
     } catch (e) {
       console.error('[Data] 读取偷看历史失败:', e);
@@ -630,23 +676,26 @@ export default function (e, n, t) {
     for (const e of t.values()) e.messageId > a && (a = e.messageId);
     let o = {};
     try {
-      o = getVariables({
-        type: 'character'
-      }) || {};
+      o =
+        getVariables({
+          type: 'character',
+        }) || {};
     } catch (e) {
       console.warn('[Data] 无法读取角色变量:', e);
     }
     let r = [];
-    n.length > 0 && (r = n.map(e => e.name)), console.info('[Data] privateChats 来源: phone_data.characters, 数量:', r.length);
+    (n.length > 0 && (r = n.map((e) => e.name)),
+      console.info('[Data] privateChats 来源: phone_data.characters, 数量:', r.length));
     let i = [];
-    Array.isArray(o.phone_group_chats) ? i = o.phone_group_chats : o.phone_data?.groups && (i = o.phone_data.groups), console.info('[Data] 聊天列表配置:', {
-      privateChats: r,
-      groupChats: i,
-      tavernHistoryKeys: Array.from(t.keys()),
-      latestMessageId: a
-    });
+    (Array.isArray(o.phone_group_chats) ? (i = o.phone_group_chats) : o.phone_data?.groups && (i = o.phone_data.groups),
+      console.info('[Data] 聊天列表配置:', {
+        privateChats: r,
+        groupChats: i,
+        tavernHistoryKeys: Array.from(t.keys()),
+        latestMessageId: a,
+      }));
     for (const o of r) {
-      const r = n.find(e => e.name === o),
+      const r = n.find((e) => e.name === o),
         i = `private:${o}`,
         s = t.get(i);
       let l = '暂无消息',
@@ -654,7 +703,7 @@ export default function (e, n, t) {
         A = 0;
       if (s && s.messages.length > 0) {
         const e = s.messages[s.messages.length - 1];
-        l = w(e), c = e.time || '00:00', s.messageId === a && (A = s.messages.length);
+        ((l = w(e)), (c = e.time || '00:00'), s.messageId === a && (A = s.messages.length));
       }
       e.push({
         id: r?.id || `char_${o}`,
@@ -663,7 +712,7 @@ export default function (e, n, t) {
         avatar: r?.avatar || p(o),
         preview: l,
         time: c,
-        unread: A
+        unread: A,
       });
     }
     for (const n of i) {
@@ -674,7 +723,7 @@ export default function (e, n, t) {
         l = 0;
       if (r && r.messages.length > 0) {
         const e = r.messages[r.messages.length - 1];
-        i = w(e), s = e.time || '00:00', r.messageId === a && (l = r.messages.length);
+        ((i = w(e)), (s = e.time || '00:00'), r.messageId === a && (l = r.messages.length));
       }
       e.push({
         id: n.id || `group_${n.name}`,
@@ -683,7 +732,7 @@ export default function (e, n, t) {
         avatar: n.avatar || p(n.name),
         preview: i,
         time: s,
-        unread: l
+        unread: l,
       });
     }
     return e;
@@ -703,30 +752,31 @@ export default function (e, n, t) {
         let r;
         const i = String(n.message || ''),
           c = [];
-        for (; null !== (r = l.exec(i));) try {
-          const t = r[1].trim(),
-            a = o().parse(t);
-          if (a?.messages && Array.isArray(a.messages)) {
-            const t = {
-              info: {
-                name: a.name || e,
-                date: a.date,
-                time: a.time,
-                emotion: a.emotion,
-                location: a.location,
-                state: a.state,
-                thought: a.thought
-              },
-              messages: a.messages,
-              messageId: n.message_id,
-              blockIndex: c.length
-            };
-            c.push(t);
+        for (; null !== (r = l.exec(i));)
+          try {
+            const t = r[1].trim(),
+              a = o().parse(t);
+            if (a?.messages && Array.isArray(a.messages)) {
+              const t = {
+                info: {
+                  name: a.name || e,
+                  date: a.date,
+                  time: a.time,
+                  emotion: a.emotion,
+                  location: a.location,
+                  state: a.state,
+                  thought: a.thought,
+                },
+                messages: a.messages,
+                messageId: n.message_id,
+                blockIndex: c.length,
+              };
+              c.push(t);
+            }
+          } catch (e) {
+            console.warn(`[Data] 解析楼层 ${n.message_id} 的私聊记录失败:`, e);
           }
-        } catch (e) {
-          console.warn(`[Data] 解析楼层 ${n.message_id} 的私聊记录失败:`, e);
-        }
-        l.lastIndex = 0, t.unshift(...c);
+        ((l.lastIndex = 0), t.unshift(...c));
       }
       const A = t.reduce((e, n) => e + n.messages.length, 0);
       console.info(`[Data] 读取 ${e} 的私聊记录: ${t.length} 层, ${A} 条消息`);
@@ -739,16 +789,17 @@ export default function (e, n, t) {
     const t = [];
     try {
       const a = getLastMessageId();
-      if (console.info(`[Data] 群聊历史 - lastMsgId: ${a}, 群名: "${e}"`), a < 0) return t;
+      if ((console.info(`[Data] 群聊历史 - lastMsgId: ${a}, 群名: "${e}"`), a < 0)) return t;
       let r = '',
         s = 0;
       try {
-        const n = getVariables({
-            type: 'character'
-          }) || {},
+        const n =
+            getVariables({
+              type: 'character',
+            }) || {},
           t = Array.isArray(n.phone_group_chats) ? n.phone_group_chats : i().get(n, 'phone_data.groups');
         if (Array.isArray(t)) {
-          const n = t.find(n => String(n?.name || '').trim() === e);
+          const n = t.find((n) => String(n?.name || '').trim() === e);
           r = 'string' == typeof n?.avatar ? n.avatar : '';
           const a = Array.isArray(n?.mainMembers) ? n.mainMembers.length : Number(n?.members);
           s = Number.isFinite(a) ? a : 0;
@@ -770,31 +821,32 @@ export default function (e, n, t) {
         const A = [];
         for (; null !== (c = m.exec(i));) {
           const n = i.substring(c.index, c.index + c[0].indexOf('>') + 1).match(/target="([^"]+)"/);
-          if ((n ? String(n[1]).trim() : '') === String(e || '').trim()) try {
-            const n = c[1].trim(),
-              t = o().parse(n);
-            if (t?.messages && Array.isArray(t.messages)) {
-              const n = Number(t?.members),
-                a = {
-                  info: {
-                    id: e,
-                    name: e,
-                    avatar: l,
-                    members: Number.isFinite(n) ? n : s,
-                    date: t?.date,
-                    time: t?.time
-                  },
-                  messages: t.messages,
-                  messageId: r,
-                  blockIndex: A.length
-                };
-              A.push(a), console.info(`[Data] 群聊历史 - 找到楼层 ${r}, 消息数: ${t.messages.length}`);
+          if ((n ? String(n[1]).trim() : '') === String(e || '').trim())
+            try {
+              const n = c[1].trim(),
+                t = o().parse(n);
+              if (t?.messages && Array.isArray(t.messages)) {
+                const n = Number(t?.members),
+                  a = {
+                    info: {
+                      id: e,
+                      name: e,
+                      avatar: l,
+                      members: Number.isFinite(n) ? n : s,
+                      date: t?.date,
+                      time: t?.time,
+                    },
+                    messages: t.messages,
+                    messageId: r,
+                    blockIndex: A.length,
+                  };
+                (A.push(a), console.info(`[Data] 群聊历史 - 找到楼层 ${r}, 消息数: ${t.messages.length}`));
+              }
+            } catch (e) {
+              console.warn(`[Data] 解析楼层 ${r} 的群聊记录失败:`, e);
             }
-          } catch (e) {
-            console.warn(`[Data] 解析楼层 ${r} 的群聊记录失败:`, e);
-          }
         }
-        m.lastIndex = 0, t.unshift(...A);
+        ((m.lastIndex = 0), t.unshift(...A));
       }
       const g = t.reduce((e, n) => e + n.messages.length, 0);
       console.info(`[Data] 读取 ${e} 的群聊记录: ${t.length} 层, ${g} 条消息`);
@@ -813,41 +865,50 @@ export default function (e, n, t) {
         i = 0 === r ? 0 : Math.max(0, t - r + 1),
         s = getChatMessages(`${i}-${t}`);
       if (!s || 0 === s.length) return n;
-      const l = (e => e.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))(String(e || '')),
-        A = new RegExp(`<phone_module\\s+type="listenTogether"\\s+character="${l}"[^>]*>([\\s\\S]*?)</phone_module>`, 'g'),
-        d = e => {
+      const l = ((e) => e.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))(String(e || '')),
+        A = new RegExp(
+          `<phone_module\\s+type="listenTogether"\\s+character="${l}"[^>]*>([\\s\\S]*?)</phone_module>`,
+          'g',
+        ),
+        d = (e) => {
           const n = [],
             t = String(e?.message || ''),
             a = 'number' == typeof e?.message_id ? e.message_id : -1;
           let r;
-          for (; null !== (r = A.exec(t));) try {
-            const e = String(r?.[1] || '').trim();
-            if (!e) continue;
-            const t = o().parse(e);
-            t?.messages && Array.isArray(t.messages) && n.push({
-              info: {
-                name: t.name,
-                date: t.date,
-                time: t.time,
-                state: t.state,
-                thought: t.thought
-              },
-              messages: t.messages,
-              messageId: a
-            });
-          } catch (e) {
-            console.warn(`[Data] 解析楼层 ${a} 的一起听记录失败:`, e);
-          }
-          return A.lastIndex = 0, n;
+          for (; null !== (r = A.exec(t));)
+            try {
+              const e = String(r?.[1] || '').trim();
+              if (!e) continue;
+              const t = o().parse(e);
+              t?.messages &&
+                Array.isArray(t.messages) &&
+                n.push({
+                  info: {
+                    name: t.name,
+                    date: t.date,
+                    time: t.time,
+                    state: t.state,
+                    thought: t.thought,
+                  },
+                  messages: t.messages,
+                  messageId: a,
+                });
+            } catch (e) {
+              console.warn(`[Data] 解析楼层 ${a} 的一起听记录失败:`, e);
+            }
+          return ((A.lastIndex = 0), n);
         };
-      if (a.appendToLastMessage) for (let e = 0; e < s.length; e++) {
-        const t = d(s[e]);
-        t.length > 0 && n.push(...t);
-      } else for (let e = s.length - 1; e >= 0; e--) {
-        const t = d(s[e]);
-        if (0 === t.length) break;
-        n.unshift(...t);
-      }
+      if (a.appendToLastMessage)
+        for (let e = 0; e < s.length; e++) {
+          const t = d(s[e]);
+          t.length > 0 && n.push(...t);
+        }
+      else
+        for (let e = s.length - 1; e >= 0; e--) {
+          const t = d(s[e]);
+          if (0 === t.length) break;
+          n.unshift(...t);
+        }
       const p = n.reduce((e, n) => e + n.messages.length, 0);
       console.info(`[Data] 读取 ${e} 的一起听记录: ${n.length} 层, ${p} 条消息`);
     } catch (e) {
@@ -864,7 +925,7 @@ export default function (e, n, t) {
           time: t.time,
           state: t.state || '',
           thought: t.thought || '',
-          messages: n
+          messages: n,
         },
         s = `<phone_module type="listenTogether" character="${e}" timestamp="${r}">\n${o().stringify(i)}</phone_module>`;
       if (a) {
@@ -873,20 +934,32 @@ export default function (e, n, t) {
           const n = getChatMessages(String(e)) || getChatMessages(`${e}-${e}`);
           if (n && n.length > 0) {
             const t = n[0].message + '\n\n' + s;
-            return await setChatMessages([{
-              message_id: e,
-              message: t
-            }]), console.info('[Data] 一起听记录已追加到楼层', e), !0;
+            return (
+              await setChatMessages([
+                {
+                  message_id: e,
+                  message: t,
+                },
+              ]),
+              console.info('[Data] 一起听记录已追加到楼层', e),
+              !0
+            );
           }
         }
       }
-      return await createChatMessages([{
-        role: 'assistant',
-        message: s,
-        is_hidden: !1
-      }]), console.info('[Data] 一起听记录已保存到新楼层'), !0;
+      return (
+        await createChatMessages([
+          {
+            role: 'assistant',
+            message: s,
+            is_hidden: !1,
+          },
+        ]),
+        console.info('[Data] 一起听记录已保存到新楼层'),
+        !0
+      );
     } catch (e) {
-      return console.error('[Data] 保存一起听历史失败:', e), !1;
+      return (console.error('[Data] 保存一起听历史失败:', e), !1);
     }
   }
 }

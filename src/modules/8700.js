@@ -12,7 +12,7 @@ export default function (e, n, t) {
     qQ: () => v,
     uH: () => w,
     vM: () => f,
-    xm: () => N
+    xm: () => N,
   });
   var a = t(2224),
     o = t.n(a),
@@ -25,11 +25,12 @@ export default function (e, n, t) {
     c = e;
   }
   function d(e) {
-    if (c) try {
-      c(e);
-    } catch (e) {
-      console.warn('[DateTimeVariables] 更新手机时间显示失败(忽略):', e);
-    }
+    if (c)
+      try {
+        c(e);
+      } catch (e) {
+        console.warn('[DateTimeVariables] 更新手机时间显示失败(忽略):', e);
+      }
   }
   function p(e, n, t) {
     if (!Number.isFinite(e) || !Number.isFinite(n) || !Number.isFinite(t)) return !1;
@@ -70,76 +71,103 @@ export default function (e, n, t) {
       t = e.path;
     if ('chat' !== n && 'message' !== n) return null;
     const a = 'string' == typeof t ? t.trim() : '';
-    return a ? {
-      type: n,
-      path: a
-    } : null;
+    return a
+      ? {
+          type: n,
+          path: a,
+        }
+      : null;
   }
   function u() {
     try {
-      const e = getVariables({
-          type: 'chat'
-        }) || {},
+      const e =
+          getVariables({
+            type: 'chat',
+          }) || {},
         n = o().get(e, `${i}.settings`);
       return {
         enabled: Boolean(n?.enabled),
         dateVariableBinding: g(n?.dateVariableBinding),
-        timeVariableBinding: g(n?.timeVariableBinding)
+        timeVariableBinding: g(n?.timeVariableBinding),
       };
     } catch (e) {
-      return console.warn('[DateTimeVariables] 读取时间设置失败(忽略):', e), {
-        enabled: !1,
-        dateVariableBinding: null,
-        timeVariableBinding: null
-      };
+      return (
+        console.warn('[DateTimeVariables] 读取时间设置失败(忽略):', e),
+        {
+          enabled: !1,
+          dateVariableBinding: null,
+          timeVariableBinding: null,
+        }
+      );
     }
   }
   function f(e) {
     try {
-      const n = getVariables({
-          type: 'chat'
-        }) || {},
+      const n =
+          getVariables({
+            type: 'chat',
+          }) || {},
         t = o().get(n, `${i}.settings`),
-        a = t && 'object' == typeof t && !Array.isArray(t) ? {
-          ...t
-        } : {};
-      'boolean' == typeof e.enabled && o().set(a, 'enabled', e.enabled), 'dateVariableBinding' in e && o().set(a, 'dateVariableBinding', e.dateVariableBinding), 'timeVariableBinding' in e && o().set(a, 'timeVariableBinding', e.timeVariableBinding), o().set(n, `${i}.settings`, a), replaceVariables(n, {
-        type: 'chat'
-      });
+        a =
+          t && 'object' == typeof t && !Array.isArray(t)
+            ? {
+                ...t,
+              }
+            : {};
+      ('boolean' == typeof e.enabled && o().set(a, 'enabled', e.enabled),
+        'dateVariableBinding' in e && o().set(a, 'dateVariableBinding', e.dateVariableBinding),
+        'timeVariableBinding' in e && o().set(a, 'timeVariableBinding', e.timeVariableBinding),
+        o().set(n, `${i}.settings`, a),
+        replaceVariables(n, {
+          type: 'chat',
+        }));
     } catch (e) {
       console.warn('[DateTimeVariables] 保存时间设置失败(忽略):', e);
     }
   }
   function b() {
     try {
-      const e = getVariables({
-          type: 'chat'
-        }) || {},
+      const e =
+          getVariables({
+            type: 'chat',
+          }) || {},
         n = m(o().get(e, `${i}.date`)),
         t = m(o().get(e, `${i}.time`)),
         a = {};
-      return n && (a.date = n), t && (a.time = t), a;
+      return (n && (a.date = n), t && (a.time = t), a);
     } catch (e) {
-      return console.warn('[DateTimeVariables] 读取聊天变量失败(忽略):', e), {};
+      return (console.warn('[DateTimeVariables] 读取聊天变量失败(忽略):', e), {});
     }
   }
   function v() {
     try {
-      const e = getVariables({
-          type: 'chat'
-        }) || {},
+      const e =
+          getVariables({
+            type: 'chat',
+          }) || {},
         n = o().get(e, i),
-        t = n && 'object' == typeof n && !Array.isArray(n) ? {
-          ...n
-        } : {};
-      m(o().get(t, 'date')) || o().set(t, 'date', s), m(o().get(t, 'time')) || o().set(t, 'time', l);
+        t =
+          n && 'object' == typeof n && !Array.isArray(n)
+            ? {
+                ...n,
+              }
+            : {};
+      (m(o().get(t, 'date')) || o().set(t, 'date', s), m(o().get(t, 'time')) || o().set(t, 'time', l));
       const a = o().get(t, 'settings'),
-        r = a && 'object' == typeof a && !Array.isArray(a) ? {
-          ...a
-        } : {};
-      'boolean' != typeof r.enabled && (r.enabled = !1), 'dateVariableBinding' in r || (r.dateVariableBinding = null), 'timeVariableBinding' in r || (r.timeVariableBinding = null), o().set(t, 'settings', r), o().set(e, i, t), replaceVariables(e, {
-        type: 'chat'
-      });
+        r =
+          a && 'object' == typeof a && !Array.isArray(a)
+            ? {
+                ...a,
+              }
+            : {};
+      ('boolean' != typeof r.enabled && (r.enabled = !1),
+        'dateVariableBinding' in r || (r.dateVariableBinding = null),
+        'timeVariableBinding' in r || (r.timeVariableBinding = null),
+        o().set(t, 'settings', r),
+        o().set(e, i, t),
+        replaceVariables(e, {
+          type: 'chat',
+        }));
     } catch (e) {
       console.warn('[DateTimeVariables] 初始化聊天变量失败(忽略):', e);
     }
@@ -148,31 +176,40 @@ export default function (e, n, t) {
     const n = m(e.date),
       t = n ? C(n) : null,
       a = m(e.time);
-    if (t || a) try {
-      const e = getVariables({
-          type: 'chat'
-        }) || {},
-        n = o().get(e, i),
-        r = n && 'object' == typeof n && !Array.isArray(n) ? {
-          ...n
-        } : {};
-      t && o().set(r, 'date', t), a && o().set(r, 'time', a), o().set(e, i, r), replaceVariables(e, {
-        type: 'chat'
-      });
-    } catch (e) {
-      console.warn('[DateTimeVariables] 保存聊天变量失败(忽略):', e);
-    }
+    if (t || a)
+      try {
+        const e =
+            getVariables({
+              type: 'chat',
+            }) || {},
+          n = o().get(e, i),
+          r =
+            n && 'object' == typeof n && !Array.isArray(n)
+              ? {
+                  ...n,
+                }
+              : {};
+        (t && o().set(r, 'date', t),
+          a && o().set(r, 'time', a),
+          o().set(e, i, r),
+          replaceVariables(e, {
+            type: 'chat',
+          }));
+      } catch (e) {
+        console.warn('[DateTimeVariables] 保存聊天变量失败(忽略):', e);
+      }
   }
   function h() {
     v();
-    if (!u().enabled) return void d({
-      date: s,
-      time: l
-    });
+    if (!u().enabled)
+      return void d({
+        date: s,
+        time: l,
+      });
     const e = b();
     d({
       date: e.date ? C(e.date) : s,
-      time: e.time || l
+      time: e.time || l,
     });
   }
   function B() {
@@ -181,7 +218,7 @@ export default function (e, n, t) {
     return e ? C(e) : s;
   }
   function y() {
-    return u().enabled && b().time || l;
+    return (u().enabled && b().time) || l;
   }
   function k(e, n) {
     if (!e) return null;
@@ -189,18 +226,20 @@ export default function (e, n, t) {
     if (!t) return null;
     try {
       if ('chat' === e.type) {
-        const e = getVariables({
-          type: 'chat'
-        }) || {};
+        const e =
+          getVariables({
+            type: 'chat',
+          }) || {};
         return m(o().get(e, t));
       }
       if ('message' === e.type) {
         const e = 'number' == typeof n && n >= 0 ? n : getLastMessageId();
         if (e < 0) return null;
-        const a = getVariables({
-          type: 'message',
-          message_id: e
-        }) || {};
+        const a =
+          getVariables({
+            type: 'message',
+            message_id: e,
+          }) || {};
         return m(o().get(a, t));
       }
     } catch (n) {
@@ -209,24 +248,37 @@ export default function (e, n, t) {
     return null;
   }
   function E(e) {
-    if (!e || 'object' != typeof e) return {
-      dateValue: null,
-      timeValue: null
-    };
+    if (!e || 'object' != typeof e)
+      return {
+        dateValue: null,
+        timeValue: null,
+      };
     return {
       dateValue: m(o().get(e, 'date')),
-      timeValue: m(o().get(e, 'time'))
+      timeValue: m(o().get(e, 'time')),
     };
   }
   function w(e) {
     v();
     const n = u(),
-      t = function (e) {
+      t = (function (e) {
         const n = E(e);
         if (n.dateValue || n.timeValue) return n;
         if (!e || 'object' != typeof e) return n;
         const t = [];
-        for (const n of ['group_message', 'listen_together', 'listen-together', 'dynamic', 'homepage', 'forum', 'forum_post', 'email', 'browser', 'call', 'phone_module']) {
+        for (const n of [
+          'group_message',
+          'listen_together',
+          'listen-together',
+          'dynamic',
+          'homepage',
+          'forum',
+          'forum_post',
+          'email',
+          'browser',
+          'call',
+          'phone_module',
+        ]) {
           const a = e[n];
           a && 'object' == typeof a && t.push(a);
         }
@@ -236,18 +288,21 @@ export default function (e, n, t) {
         }
         return {
           dateValue: null,
-          timeValue: null
+          timeValue: null,
         };
-      }(e),
+      })(e),
       a = t.dateValue ? C(t.dateValue) : null,
       o = t.timeValue;
-    (a || o) && (x({
-      date: a ?? void 0,
-      time: o ?? void 0
-    }), n.enabled && d({
-      date: a ?? void 0,
-      time: o ?? void 0
-    }));
+    (a || o) &&
+      (x({
+        date: a ?? void 0,
+        time: o ?? void 0,
+      }),
+      n.enabled &&
+        d({
+          date: a ?? void 0,
+          time: o ?? void 0,
+        }));
   }
   function N(e) {
     v();
@@ -256,23 +311,27 @@ export default function (e, n, t) {
     const t = k(n.dateVariableBinding, e),
       a = t ? C(t) : null,
       o = k(n.timeVariableBinding, e);
-    (a || o) && (x({
-      date: a ?? void 0,
-      time: o ?? void 0
-    }), d({
-      date: a ?? void 0,
-      time: o ?? void 0
-    }));
+    (a || o) &&
+      (x({
+        date: a ?? void 0,
+        time: o ?? void 0,
+      }),
+      d({
+        date: a ?? void 0,
+        time: o ?? void 0,
+      }));
   }
   function F() {
-    v(), h(), eventOn(tavern_events.GENERATION_ENDED, e => {
-      if (u().enabled) {
-        if ('number' == typeof e) {
-          const n = SillyTavern.getCurrentChatId?.();
-          if ((0, r.v)(n, e)) return;
+    (v(),
+      h(),
+      eventOn(tavern_events.GENERATION_ENDED, (e) => {
+        if (u().enabled) {
+          if ('number' == typeof e) {
+            const n = SillyTavern.getCurrentChatId?.();
+            if ((0, r.v)(n, e)) return;
+          }
+          N(e);
         }
-        N(e);
-      }
-    });
+      }));
   }
 }

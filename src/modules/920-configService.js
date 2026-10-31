@@ -1,12 +1,13 @@
 // webpack 模块 920（提取自 phone_index_fixed.js）
 export default function (e, n, t) {
-  t.r(n), t.d(n, {
-    GEMINI_IMAGE_SIZE_OPTIONS: () => o,
-    IMAGE_ASPECT_RATIO_OPTIONS: () => a,
-    getDefaultNovelAiConfig: () => p,
-    loadNovelAiConfig: () => w,
-    saveNovelAiConfig: () => N
-  });
+  (t.r(n),
+    t.d(n, {
+      GEMINI_IMAGE_SIZE_OPTIONS: () => o,
+      IMAGE_ASPECT_RATIO_OPTIONS: () => a,
+      getDefaultNovelAiConfig: () => p,
+      loadNovelAiConfig: () => w,
+      saveNovelAiConfig: () => N,
+    }));
   const a = ['auto', '1:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9'],
     o = ['auto', '1K', '2K', '4K'],
     r = 'phone_novelai_config',
@@ -36,7 +37,7 @@ export default function (e, n, t) {
       varietyBoost: !1,
       characterReferenceEnabled: !1,
       characterReferenceStyleAware: !0,
-      characterReferenceFidelity: .8
+      characterReferenceFidelity: 0.8,
     },
     c = {
       url: '',
@@ -44,7 +45,7 @@ export default function (e, n, t) {
       model: '',
       promptPrefix: '',
       promptSuffix: '',
-      aspectRatio: 'auto'
+      aspectRatio: 'auto',
     },
     A = {
       url: '',
@@ -53,14 +54,14 @@ export default function (e, n, t) {
       promptPrefix: '',
       promptSuffix: '',
       aspectRatio: 'auto',
-      imageSize: 'auto'
+      imageSize: 'auto',
     },
     d = {
       url: 'https://gen.pollinations.ai/image',
       key: '',
       model: '',
       promptPrefix: '',
-      promptSuffix: ''
+      promptSuffix: '',
     },
     q = {
       url: 'http://127.0.0.1:8188',
@@ -72,27 +73,27 @@ export default function (e, n, t) {
       samplerNodeId: '3',
       promptPrefix: '',
       promptSuffix: '',
-      negativePrompt: ''
+      negativePrompt: '',
     };
   function p() {
     return {
       apiFormat: i,
       promptComposeMode: s,
       novelai: {
-        ...l
+        ...l,
       },
       openai: {
-        ...c
+        ...c,
       },
       gemini: {
-        ...A
+        ...A,
       },
       pollinations: {
-        ...d
+        ...d,
       },
       comfyui: {
-        ...q
-      }
+        ...q,
+      },
     };
   }
   function C(e, n, t) {
@@ -137,7 +138,10 @@ export default function (e, n, t) {
   function B(e, n) {
     const t = e && 'object' == typeof e ? e : {},
       a = String(t.referenceImageMode ?? t.reference_image_mode ?? t.referenceMode ?? t.reference_mode ?? '').trim(),
-      o = 'boolean' == typeof t.characterReferenceEnabled ? t.characterReferenceEnabled : 'character_reference' === a || 'auto' === a || 'vibe' !== a && n.characterReferenceEnabled;
+      o =
+        'boolean' == typeof t.characterReferenceEnabled
+          ? t.characterReferenceEnabled
+          : 'character_reference' === a || 'auto' === a || ('vibe' !== a && n.characterReferenceEnabled);
     return {
       url: 'string' == typeof t.url ? t.url : n.url,
       key: 'string' == typeof t.key ? t.key : n.key,
@@ -161,8 +165,11 @@ export default function (e, n, t) {
       cfgRescale: C(m(t.cfgRescale, n.cfgRescale), 0, 1),
       varietyBoost: 'boolean' == typeof t.varietyBoost ? t.varietyBoost : n.varietyBoost,
       characterReferenceEnabled: o,
-      characterReferenceStyleAware: 'boolean' == typeof t.characterReferenceStyleAware ? t.characterReferenceStyleAware : n.characterReferenceStyleAware,
-      characterReferenceFidelity: C(m(t.characterReferenceFidelity, n.characterReferenceFidelity), 0, 1)
+      characterReferenceStyleAware:
+        'boolean' == typeof t.characterReferenceStyleAware
+          ? t.characterReferenceStyleAware
+          : n.characterReferenceStyleAware,
+      characterReferenceFidelity: C(m(t.characterReferenceFidelity, n.characterReferenceFidelity), 0, 1),
     };
   }
   function y(e, n) {
@@ -173,7 +180,7 @@ export default function (e, n, t) {
       model: 'string' == typeof t.model ? t.model : n.model,
       promptPrefix: 'string' == typeof t.promptPrefix ? t.promptPrefix : n.promptPrefix,
       promptSuffix: 'string' == typeof t.promptSuffix ? t.promptSuffix : n.promptSuffix,
-      aspectRatio: x(t.aspectRatio, n.aspectRatio)
+      aspectRatio: x(t.aspectRatio, n.aspectRatio),
     };
   }
   function k(e, n) {
@@ -186,18 +193,21 @@ export default function (e, n, t) {
       promptPrefix: 'string' == typeof t.promptPrefix ? t.promptPrefix : n.promptPrefix,
       promptSuffix: 'string' == typeof t.promptSuffix ? t.promptSuffix : n.promptSuffix,
       aspectRatio: x(t.aspectRatio, n.aspectRatio),
-      imageSize: h(a, n.imageSize)
+      imageSize: h(a, n.imageSize),
     };
   }
   function E(e, n) {
     const t = e && 'object' == typeof e ? e : {},
       a = String('string' == typeof t.url ? t.url : n.url).trim();
     return {
-      url: a && 'https://image.pollinations.ai/prompt' !== a && 'https://image.pollinations.ai' !== a ? a : 'https://gen.pollinations.ai/image',
+      url:
+        a && 'https://image.pollinations.ai/prompt' !== a && 'https://image.pollinations.ai' !== a
+          ? a
+          : 'https://gen.pollinations.ai/image',
       key: 'string' == typeof t.key ? t.key : n.key,
       model: 'string' == typeof t.model ? t.model : n.model,
       promptPrefix: 'string' == typeof t.promptPrefix ? t.promptPrefix : n.promptPrefix,
-      promptSuffix: 'string' == typeof t.promptSuffix ? t.promptSuffix : n.promptSuffix
+      promptSuffix: 'string' == typeof t.promptSuffix ? t.promptSuffix : n.promptSuffix,
     };
   }
   function J(e, n) {
@@ -207,12 +217,18 @@ export default function (e, n, t) {
       key: 'string' == typeof t.key ? t.key : n.key,
       model: 'string' == typeof t.model ? t.model : n.model,
       workflowJson: 'string' == typeof t.workflowJson ? t.workflowJson : n.workflowJson,
-      positivePromptNodeId: 'string' == typeof t.positivePromptNodeId && t.positivePromptNodeId ? t.positivePromptNodeId : n.positivePromptNodeId,
-      negativePromptNodeId: 'string' == typeof t.negativePromptNodeId && t.negativePromptNodeId ? t.negativePromptNodeId : n.negativePromptNodeId,
+      positivePromptNodeId:
+        'string' == typeof t.positivePromptNodeId && t.positivePromptNodeId
+          ? t.positivePromptNodeId
+          : n.positivePromptNodeId,
+      negativePromptNodeId:
+        'string' == typeof t.negativePromptNodeId && t.negativePromptNodeId
+          ? t.negativePromptNodeId
+          : n.negativePromptNodeId,
       samplerNodeId: 'string' == typeof t.samplerNodeId && t.samplerNodeId ? t.samplerNodeId : n.samplerNodeId,
       promptPrefix: 'string' == typeof t.promptPrefix ? t.promptPrefix : n.promptPrefix,
       promptSuffix: 'string' == typeof t.promptSuffix ? t.promptSuffix : n.promptSuffix,
-      negativePrompt: 'string' == typeof t.negativePrompt ? t.negativePrompt : n.negativePrompt
+      negativePrompt: 'string' == typeof t.negativePrompt ? t.negativePrompt : n.negativePrompt,
     };
   }
   function w() {
@@ -223,30 +239,74 @@ export default function (e, n, t) {
       if (!n || 'object' != typeof n) return p();
       const t = b(n.apiFormat, i),
         a = v(n.promptComposeMode, s);
-      if (n.novelai && 'object' == typeof n.novelai || n.openai && 'object' == typeof n.openai || n.gemini && 'object' == typeof n.gemini || n.pollinations && 'object' == typeof n.pollinations || n.comfyui && 'object' == typeof n.comfyui) return {
-        apiFormat: t,
-        promptComposeMode: a,
-        novelai: B(n.novelai, l),
-        openai: y(n.openai, c),
-        gemini: k(n.gemini, A),
-        pollinations: E(n.pollinations, d),
-        comfyui: J(n.comfyui, q)
-      };
+      if (
+        (n.novelai && 'object' == typeof n.novelai) ||
+        (n.openai && 'object' == typeof n.openai) ||
+        (n.gemini && 'object' == typeof n.gemini) ||
+        (n.pollinations && 'object' == typeof n.pollinations) ||
+        (n.comfyui && 'object' == typeof n.comfyui)
+      )
+        return {
+          apiFormat: t,
+          promptComposeMode: a,
+          novelai: B(n.novelai, l),
+          openai: y(n.openai, c),
+          gemini: k(n.gemini, A),
+          pollinations: E(n.pollinations, d),
+          comfyui: J(n.comfyui, q),
+        };
       const o = n,
         C = B(o, l),
         m = y(o, c),
         g = k(o, A),
         u = E(o, d),
         P = J(o, q);
-      return 'novelai' !== t && (C.url = l.url, C.key = l.key, C.model = l.model, C.promptPrefix = l.promptPrefix, C.promptSuffix = l.promptSuffix), 'openai' !== t && (m.url = c.url, m.key = c.key, m.model = c.model, m.promptPrefix = c.promptPrefix, m.promptSuffix = c.promptSuffix), 'gemini' !== t && (g.url = A.url, g.key = A.key, g.model = A.model, g.promptPrefix = A.promptPrefix, g.promptSuffix = A.promptSuffix), 'pollinations' !== t && (u.url = d.url, u.key = d.key, u.model = d.model, u.promptPrefix = d.promptPrefix, u.promptSuffix = d.promptSuffix), 'comfyui' !== t && (P.url = q.url, P.key = q.key, P.model = q.model, P.workflowJson = q.workflowJson, P.positivePromptNodeId = q.positivePromptNodeId, P.negativePromptNodeId = q.negativePromptNodeId, P.samplerNodeId = q.samplerNodeId, P.promptPrefix = q.promptPrefix, P.promptSuffix = q.promptSuffix, P.negativePrompt = q.negativePrompt), {
-        apiFormat: t,
-        promptComposeMode: a,
-        novelai: C,
-        openai: m,
-        gemini: g,
-        pollinations: u,
-        comfyui: P
-      };
+      return (
+        'novelai' !== t &&
+          ((C.url = l.url),
+          (C.key = l.key),
+          (C.model = l.model),
+          (C.promptPrefix = l.promptPrefix),
+          (C.promptSuffix = l.promptSuffix)),
+        'openai' !== t &&
+          ((m.url = c.url),
+          (m.key = c.key),
+          (m.model = c.model),
+          (m.promptPrefix = c.promptPrefix),
+          (m.promptSuffix = c.promptSuffix)),
+        'gemini' !== t &&
+          ((g.url = A.url),
+          (g.key = A.key),
+          (g.model = A.model),
+          (g.promptPrefix = A.promptPrefix),
+          (g.promptSuffix = A.promptSuffix)),
+        'pollinations' !== t &&
+          ((u.url = d.url),
+          (u.key = d.key),
+          (u.model = d.model),
+          (u.promptPrefix = d.promptPrefix),
+          (u.promptSuffix = d.promptSuffix)),
+        'comfyui' !== t &&
+          ((P.url = q.url),
+          (P.key = q.key),
+          (P.model = q.model),
+          (P.workflowJson = q.workflowJson),
+          (P.positivePromptNodeId = q.positivePromptNodeId),
+          (P.negativePromptNodeId = q.negativePromptNodeId),
+          (P.samplerNodeId = q.samplerNodeId),
+          (P.promptPrefix = q.promptPrefix),
+          (P.promptSuffix = q.promptSuffix),
+          (P.negativePrompt = q.negativePrompt)),
+        {
+          apiFormat: t,
+          promptComposeMode: a,
+          novelai: C,
+          openai: m,
+          gemini: g,
+          pollinations: u,
+          comfyui: P,
+        }
+      );
     } catch {
       return p();
     }
@@ -260,7 +320,7 @@ export default function (e, n, t) {
         openai: y(e?.openai, c),
         gemini: k(e?.gemini, A),
         pollinations: E(e?.pollinations, d),
-        comfyui: J(e?.comfyui, q)
+        comfyui: J(e?.comfyui, q),
       };
       localStorage.setItem(r, JSON.stringify(n));
       return !0;
@@ -274,17 +334,17 @@ export default function (e, n, t) {
             openai: y(e?.openai, c),
             gemini: k(e?.gemini, A),
             pollinations: E(e?.pollinations, d),
-            comfyui: J(e?.comfyui, q)
+            comfyui: J(e?.comfyui, q),
           };
           t.comfyui && delete t.comfyui.workflowJson;
           localStorage.setItem(r, JSON.stringify(t));
           console.warn('[ConfigService] 配置超出存储配额，已剔除 ComfyUI 工作流 JSON 后保存');
           return 'trimmed';
         } catch (t) {
-          return console.warn('[ConfigService] 保存绘图配置失败（配额降级后仍失败）:', t), !1;
+          return (console.warn('[ConfigService] 保存绘图配置失败（配额降级后仍失败）:', t), !1);
         }
       }
-      return console.warn('[ConfigService] 保存绘图配置失败:', n), !1;
+      return (console.warn('[ConfigService] 保存绘图配置失败:', n), !1);
     }
   }
 }

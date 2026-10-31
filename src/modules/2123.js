@@ -1,8 +1,8 @@
 // webpack 模块 2123（提取自 phone_index_fixed.js）
 export default function (e, n, t) {
   var a = t(3556);
-  a.__esModule && (a = a.default), 'string' == typeof a && (a = [[e.id, a, '']]), a.locals && (e.exports = a.locals);
+  (a.__esModule && (a = a.default), 'string' == typeof a && (a = [[e.id, a, '']]), a.locals && (e.exports = a.locals));
   (0, t(4424).A)('c69b1ed0', a, !1, {
-    ssrId: !0
+    ssrId: !0,
   });
 }

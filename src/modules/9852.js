@@ -2,7 +2,7 @@
 export default function (e, n, t) {
   t.d(n, {
     Q: () => c,
-    X: () => l
+    X: () => l,
   });
   var a = t(4061);
   const o = 'phone_display_settings',
@@ -17,16 +17,16 @@ export default function (e, n, t) {
       useDateTimeVariables: !1,
       dateVariableBinding: null,
       timeVariableBinding: null,
-      useChatVariables: !0
+      useChatVariables: !0,
     },
     i = (0, a.ref)({
-      ...r
+      ...r,
     });
   let s = !1;
   function l() {
     const e = () => {
       try {
-        localStorage.setItem(o, JSON.stringify(i.value)), console.info('[DisplaySettings] 设置已保存');
+        (localStorage.setItem(o, JSON.stringify(i.value)), console.info('[DisplaySettings] 设置已保存'));
       } catch (e) {
         console.error('[DisplaySettings] 保存设置失败:', e);
       }
@@ -51,7 +51,7 @@ export default function (e, n, t) {
               useDateTimeVariables: n.useDateTimeVariables ?? r.useDateTimeVariables,
               dateVariableBinding: n.dateVariableBinding ?? r.dateVariableBinding,
               timeVariableBinding: n.timeVariableBinding ?? r.timeVariableBinding,
-              useChatVariables: n.useChatVariables ?? r.useChatVariables
+              useChatVariables: n.useChatVariables ?? r.useChatVariables,
             };
           }
         } catch (e) {
@@ -61,8 +61,8 @@ export default function (e, n, t) {
       },
       saveSettings: e,
       updateSetting: (n, t) => {
-        i.value[n] = t, e();
-      }
+        ((i.value[n] = t), e());
+      },
     };
   }
   function c() {
@@ -81,14 +81,14 @@ export default function (e, n, t) {
           useDateTimeVariables: n.useDateTimeVariables ?? r.useDateTimeVariables,
           dateVariableBinding: n.dateVariableBinding ?? r.dateVariableBinding,
           timeVariableBinding: n.timeVariableBinding ?? r.timeVariableBinding,
-          useChatVariables: n.useChatVariables ?? r.useChatVariables
+          useChatVariables: n.useChatVariables ?? r.useChatVariables,
         };
       }
     } catch (e) {
       console.error('[DisplaySettings] 读取设置失败:', e);
     }
     return {
-      ...r
+      ...r,
     };
   }
 }
