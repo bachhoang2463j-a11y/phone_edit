@@ -1,0 +1,34 @@
+{
+  "name": "phone",
+  "version": "1.0.0",
+  "description": "SillyTavern（酒馆助手）外置手机插件工程，提供完整的模拟手机交互界面（聊天、动态、直播、论坛、邮箱、相机、音乐等），现已支持本地 ComfyUI 及多平台 AI 生图。",
+  "main": "phone_index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bachhoang2463j-a11y/phone_edit.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/bachhoang2463j-a11y/phone_edit/issues"
+  },
+  "homepage": "https://github.com/bachhoang2463j-a11y/phone_edit#readme",
+  "devDependencies": {
+    "@babel/generator": "^8.0.10",
+    "@babel/parser": "^8.0.10",
+    "@babel/traverse": "^8.0.10",
+    "@babel/types": "^8.0.10",
+    "@vitejs/plugin-vue": "^6.0.10",
+    "prettier": "^3.9.10",
+    "uuid": "^14.0.3",
+    "vite": "^8.3.5"
+  }
+}
