@@ -25,7 +25,8 @@ function extractModuleFromSrc(id) {
   }
   if (!file) return null;
   const code = fs.readFileSync(path.join(SRC_MODULES_DIR, file), 'utf8');
-  const m = /^\s*\/\/[^\n]*\n*export default (?:async )?function\s*\(([^)]*)\)\s*\{([\s\S]*)\}\s*$/.exec(code);
+  // 模块文件可含顶部 npm import（如 2213 的 DiceBear 本地渲染），vm 提取时剥离，由沙箱垫片代替
+  const m = /^\s*\/\/[^\n]*\n*(?:import[^\n]*\n)*export default (?:async )?function\s*\(([^)]*)\)\s*\{([\s\S]*)\}\s*$/.exec(code);
   if (!m) throw new Error('src 模块文件解析失败: ' + file);
   const [, params, body] = m;
   return `${id}(${params.replace(/\s+/g, '')}){${body}}`;

@@ -155,3 +155,13 @@
 - **沙箱骨架修复**（D 组测试连带暴露的三个预置缺陷）：①`buildFnFrom` 正则只认三参工厂（7856 等单参垫片无法加载）；②`getModule` 与 `requireModule` 共用缓存 Map 但值形态不同，依赖链模块（2213→5849）取到 undefined；③`t.n` 语义与真实 webpack 相反（CJS 应返回模块本身）；补 `YAML`/`Vue`/`_` 全局垫片。
 - **验证**：sandbox 51 项（新增 D 组 6 项）、validate 34 项、gate 9 项全过；dist 已部署。
 - **风险**：DiceBear 为运行时 CDN 依赖（当前网络实测可达）；不可达时生成图显示为空，池图（1/4 概率）与手动指定头像不受影响。
+
+## [20261031-avatar-inline] 2026-10-31 - 头像兜底 DiceBear 内联本地化（去 CDN 依赖）
+
+- **决策依据（实测）**：桌面 Node 单头像渲染 0.111ms，100 头像视图（30 唯一名带缓存）2.71ms——6 Gen 1 级按 5-10 倍折算仍为一次性几十 ms，运行时无感知。体积代价：+572KB raw / +160KB gzip（裁掉最重的 notionists/adventurer/open-peeps/lorelei 四包后，10 风格），首载解析一次性 +约 150-300ms。
+- **变更行为**：
+  1. 模块 2213 顶部 import @dicebear/core + 10 个风格包（avataaars/big-smile/bottts/croodles/fun-emoji/micah/miniavs/personas/pixel-art/thumbs），`p()` 兜底改为本地 `createAvatar(...).toDataUri()`，按名字确定性生成 + Map 缓存（每名仅生成一次）；池混用逻辑不变（约 1/4 走 randomAvatars）。
+  2. 抛弃 api.dicebear.com 运行时 CDN 依赖，头像零外部请求（dataUri 内联）。
+  3. tests/extract.cjs 支持"注释+import+export default"形态的模块文件；沙箱提供 createAvatar/风格对象垫片，D 组断言改为 dataUri 形态（D2 增加缓存只生成一次断言、D5 增加丰富度断言）。
+- **验证**：sandbox 50 项、validate 34 项、gate 9 项全过；dist（4,957,785 B）已部署。
+- **注意**：本次实施中发现并纠正了一次 stash 往返差点覆盖未提交编辑的操作（提交后所有检出往返均安全）。

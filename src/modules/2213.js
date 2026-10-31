@@ -1,4 +1,15 @@
 // webpack 模块 2213（提取自 phone_index_fixed.js）
+import { createAvatar } from '@dicebear/core';
+import * as avataaars from '@dicebear/avataaars';
+import * as bigSmile from '@dicebear/big-smile';
+import * as bottts from '@dicebear/bottts';
+import * as croodles from '@dicebear/croodles';
+import * as funEmoji from '@dicebear/fun-emoji';
+import * as micah from '@dicebear/micah';
+import * as miniavs from '@dicebear/miniavs';
+import * as personas from '@dicebear/personas';
+import * as pixelArt from '@dicebear/pixel-art';
+import * as thumbs from '@dicebear/thumbs';
 export default function (e, n, t) {
   t.d(n, {
     FI: () => u,
@@ -54,24 +65,24 @@ export default function (e, n, t) {
   function d() {
     return A().randomAvatars || [];
   }
-  // 自动兜底头像：DiceBear 开源头像库多风格混搭（按名字确定性生成，同名恒定），
-  // 与用户随机头像池（phone_data.randomAvatars）按 hash 混用，提升无专设头像角色的丰富度
-  const generatedAvatarStyles = [
-    'adventurer',
-    'avataaars',
-    'big-smile',
-    'bottts',
-    'croodles',
-    'fun-emoji',
-    'lorelei',
-    'micah',
-    'miniavs',
-    'notionists',
-    'open-peeps',
-    'personas',
-    'pixel-art',
-    'thumbs',
-  ];
+  // 自动兜底头像：DiceBear 开源头像库 10 风格本地渲染（按名字确定性生成，同名恒定，dataUri 内联零外部请求），
+  // 与用户随机头像池（phone_data.randomAvatars）按 hash 混用，提升无专设头像角色的丰富度。
+  // 每个名字只生成一次（Map 缓存），实测桌面端单次约 0.1ms，移动端可忽略。
+  // 风格选取已裁剪最重的 4 个包（notionists/adventurer/open-peeps/lorelei）控制体积
+  const generatedAvatarStyles = {
+    avataaars,
+    bigSmile,
+    bottts,
+    croodles,
+    funEmoji,
+    micah,
+    miniavs,
+    personas,
+    pixelArt,
+    thumbs,
+  };
+  const generatedAvatarStyleNames = Object.keys(generatedAvatarStyles);
+  let generatedAvatarCache = null;
   function p(e) {
     const name = String(e ?? '匿名');
     const h = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
@@ -79,8 +90,12 @@ export default function (e, n, t) {
       const n = d();
       if (n.length > 0) return n[h % n.length];
     }
-    const style = generatedAvatarStyles[h % generatedAvatarStyles.length];
-    return `https://api.dicebear.com/9.x/${style}/svg?seed=${encodeURIComponent(name)}&flip=${h % 2 === 0}`;
+    if (!generatedAvatarCache) generatedAvatarCache = new Map();
+    if (generatedAvatarCache.has(name)) return generatedAvatarCache.get(name);
+    const styleName = generatedAvatarStyleNames[h % generatedAvatarStyleNames.length];
+    const uri = (0, createAvatar)(generatedAvatarStyles[styleName], { seed: name, flip: h % 2 === 0 }).toDataUri();
+    generatedAvatarCache.set(name, uri);
+    return uri;
   }
   function C(e) {
     const n = m(e);

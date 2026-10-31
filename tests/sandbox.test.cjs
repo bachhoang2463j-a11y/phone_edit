@@ -32,6 +32,16 @@ function buildModuleRunner() {
     URL, URLSearchParams, TextDecoder, Uint8Array, DataView, Blob,
     YAML: { parse: () => null, stringify: () => '' },
     Vue: { ref: (v) => ({ value: v }) },
+    // DiceBear 本地渲染垫片（模块 2213 顶部 import 剥离后由沙箱提供同名绑定）
+    __avatarSeeds: [],
+    createAvatar: (style, options) => ({
+      toDataUri: () => {
+        sandbox.__avatarSeeds.push(options.seed);
+        return 'data:image/svg+xml;utf8,' + encodeURIComponent(options.seed);
+      },
+    }),
+    adventurer: {}, avataaars: {}, bigSmile: {}, bottts: {}, croodles: {}, funEmoji: {}, lorelei: {},
+    micah: {}, miniavs: {}, notionists: {}, openPeeps: {}, personas: {}, pixelArt: {}, thumbs: {},
     _: {
       get: (obj, path) => String(path).split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj),
       set: (obj, path, v) => {
@@ -520,15 +530,11 @@ console.log('\n== B) Module 685 ComfyUI 分发 ==');
       }
     }
 
-    // ---------------------------------------------------------------- 测试 D：DiceBear 多风格兜底头像
-    console.log('\n== D) DiceBear 多风格兜底头像 ==');
+    // ---------------------------------------------------------------- 测试 D：本地 DiceBear 兜底头像
+    console.log('\n== D) 本地 DiceBear 兜底头像 ==');
     {
       const r = buildModuleRunner();
       const mod2213 = r.requireModule(2213);
-      const GEN_STYLES = [
-        'adventurer', 'avataaars', 'big-smile', 'bottts', 'croodles', 'fun-emoji', 'lorelei', 'micah',
-        'miniavs', 'notionists', 'open-peeps', 'personas', 'pixel-art', 'thumbs',
-      ];
       const hash = (s) => [...s].reduce((a, c) => a + c.charCodeAt(0), 0);
       // 找两个名字：一个走池分支（hash%4===0），一个走生成分支
       let poolName = null;
@@ -540,18 +546,27 @@ console.log('\n== B) Module 685 ComfyUI 分发 ==');
         } else if (!genName) genName = name;
       }
       const genResult = mod2213.wH(genName);
-      ok('D1 兜底生成 DiceBear URL', genResult.startsWith('https://api.dicebear.com/9.x/'), genResult.slice(0, 60));
-      ok('D2 同名头像稳定', genResult === mod2213.wH(genName));
-      ok('D3 风格落在清单内', GEN_STYLES.some((s) => genResult.includes(`/9.x/${s}/`)));
-      ok('D4a 池分支走内置随机池', mod2213.wH(poolName).startsWith('https://files.catbox.moe/'), mod2213.wH(poolName).slice(0, 50));
-      ok('D4b 非池分支走 DiceBear', genResult.startsWith('https://api.dicebear.com/9.x/'));
+      ok('D1 兜底生成本地 dataUri 头像', genResult.startsWith('data:image/svg+xml'), genResult.slice(0, 60));
+      ok(
+        'D2 同名头像稳定且只生成一次（缓存）',
+        genResult === mod2213.wH(genName) &&
+          r.sandbox.__avatarSeeds.filter((s) => s === genName).length === 1,
+      );
+      ok('D3 池分支走内置随机池', mod2213.wH(poolName).startsWith('https://files.catbox.moe/'), mod2213.wH(poolName).slice(0, 50));
       let nameCn = null;
       for (let i = 0; i < 200 && !nameCn; i++) {
         const nm = '中文 种子' + i;
         if (0 !== hash(nm) % 4) nameCn = nm;
       }
-      const seedMatch = /[?&]seed=([^&]+)/.exec(mod2213.wH(nameCn));
-      ok('D5 seed 为名字的 URL 编码', !!seedMatch && decodeURIComponent(seedMatch[1]) === nameCn, mod2213.wH(nameCn).slice(0, 90));
+      mod2213.wH(nameCn);
+      ok('D4 seed 为角色名（确定性生成）', r.sandbox.__avatarSeeds.includes(nameCn));
+      // 丰富度：多个不同角色名应产出彼此不同的 dataUri
+      const uris = new Set();
+      for (let i = 0; i < 40; i++) {
+        const nm = '丰富度测试' + i;
+        if (0 !== hash(nm) % 4) uris.add(mod2213.wH(nm));
+      }
+      ok('D5 不同角色头像彼此不同', uris.size >= 20, '唯一值 ' + uris.size + '/40');
     }
 
     console.log(`\n结果: ${pass} 通过, ${fail} 失败`);
