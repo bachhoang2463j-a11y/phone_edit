@@ -556,19 +556,21 @@ const T = (0, i.reactive)({
   listenTogetherPartner: null,
 });
 // 从论坛/动态等入口按角色名进入私聊；sharePayload 以 browser-share 消息注入会话（AI 上下文可见）。
-// 合并原"地图跳转私聊"与"浏览器分享"两处逻辑：有会话直接切，无会话按 phone_data 角色新建。
 function openPrivateChatWith(rawName, sharePayload) {
   const name = (0, A.KI)(rawName);
   if (!name) return !1;
-  const char = (0, A.nC)(name);
-  if (!char) return (console.warn('[Store] 跳转私聊失败，角色不存在:', rawName), !1);
+  let char = (0, A.nC)(name);
+  if (!char) {
+    iL({ name, nickName: name, onlineStyle: '' });
+    char = (0, A.nC)(name);
+  }
   const now = new Date(),
     time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   const conv = T.chat.chatList.find((c) => 'single' === c.type && c.name === name);
   if (conv) T.chat.activeConversationId = conv.id;
   else {
     const newConv = {
-      id: char.id || `chat_${Date.now()}`,
+      id: char?.id || `chat_${Date.now()}`,
       type: 'single',
       name,
       avatar: (0, A.wH)(name) || '',
@@ -609,7 +611,7 @@ function forumJumpWithPost(post, comment) {
     });
   }
   comment && lines.push('', `[正在讨论] ${String(comment.name || '').trim()} 的这条评论`);
-  return openPrivateChatWith(String(post.author ?? post.name ?? '').trim(), {
+  return openPrivateChatWith(String(comment?.name ?? post.author ?? post.name ?? '').trim(), {
     id: Date.now().toString(),
     type: 'browser-share',
     title: String(post.title || '').trim() || '论坛帖子',
@@ -23445,9 +23447,9 @@ const Zg = (0, vn.A)(Hg, [['__scopeId', 'data-v-0076818b']]),
         },
         se = (post, activeCommentAuthor) => {
           // 头像/昵称点击：携带帖子（及所点评论）上下文进入私聊，角色可见上下文
-          if (post.isMyPost) return;
-          const canonical = (0, A.KI)(post.name);
-          if (!canonical || !(0, A.nC)(canonical)) return;
+          if (post.isMyPost && !activeCommentAuthor) return;
+          const canonical = (0, A.KI)(activeCommentAuthor || post.name);
+          if (!canonical) return;
           const now = new Date(),
             time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
             lines = [];
@@ -26059,7 +26061,7 @@ const ab = (0, vn.A)(tb, [['__scopeId', 'data-v-5e7a0852']]),
                     }),
                     (0, i.createTextVNode)(' ' + (0, i.toDisplayString)(p.value.author), 1),
                   ],
-                  9,
+                  8,
                   ['onClick'],
                 ),
                 (0, i.createElementVNode)('span', pb, [
@@ -26147,7 +26149,7 @@ const ab = (0, vn.A)(tb, [['__scopeId', 'data-v-5e7a0852']]),
                                 }),
                                 (0, i.createTextVNode)(' ' + (0, i.toDisplayString)(e.name), 1),
                               ],
-                              9,
+                              8,
                               ['onClick'],
                             ),
                             (0, i.createElementVNode)('span', xb, [

@@ -93,7 +93,9 @@ export default function (e, n, t) {
     if (!generatedAvatarCache) generatedAvatarCache = new Map();
     if (generatedAvatarCache.has(name)) return generatedAvatarCache.get(name);
     const styleName = generatedAvatarStyleNames[h % generatedAvatarStyleNames.length];
-    const uri = (0, createAvatar)(generatedAvatarStyles[styleName], { seed: name, flip: h % 2 === 0 }).toDataUri();
+    // toDataUri() 的 utf8 形态含未编码括号，塞进无引号 CSS url() 会截断声明导致头像空白，转 base64 规避
+    const svg = (0, createAvatar)(generatedAvatarStyles[styleName], { seed: name, flip: h % 2 === 0 }).toString();
+    const uri = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
     generatedAvatarCache.set(name, uri);
     return uri;
   }

@@ -30,16 +30,18 @@ function buildModuleRunner() {
     setTimeout, clearTimeout, setInterval, clearInterval,
     Promise, Math, Date, JSON, String, Number, Array, Object, RegExp, Error,
     URL, URLSearchParams, TextDecoder, Uint8Array, DataView, Blob,
+    btoa: (s) => Buffer.from(s, 'binary').toString('base64'),
     YAML: { parse: () => null, stringify: () => '' },
     Vue: { ref: (v) => ({ value: v }) },
     // DiceBear 本地渲染垫片（模块 2213 顶部 import 剥离后由沙箱提供同名绑定）
     __avatarSeeds: [],
-    createAvatar: (style, options) => ({
-      toDataUri: () => {
-        sandbox.__avatarSeeds.push(options.seed);
-        return 'data:image/svg+xml;utf8,' + encodeURIComponent(options.seed);
-      },
-    }),
+    createAvatar: (style, options) => {
+      sandbox.__avatarSeeds.push(options.seed);
+      return {
+        toDataUri: () => 'data:image/svg+xml;utf8,' + encodeURIComponent(options.seed),
+        toString: () => '<svg>' + (options?.seed || '') + '</svg>',
+      };
+    },
     adventurer: {}, avataaars: {}, bigSmile: {}, bottts: {}, croodles: {}, funEmoji: {}, lorelei: {},
     micah: {}, miniavs: {}, notionists: {}, openPeeps: {}, personas: {}, pixelArt: {}, thumbs: {},
     _: {
