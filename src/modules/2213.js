@@ -54,10 +54,33 @@ export default function (e, n, t) {
   function d() {
     return A().randomAvatars || [];
   }
+  // 自动兜底头像：DiceBear 开源头像库多风格混搭（按名字确定性生成，同名恒定），
+  // 与用户随机头像池（phone_data.randomAvatars）按 hash 混用，提升无专设头像角色的丰富度
+  const generatedAvatarStyles = [
+    'adventurer',
+    'avataaars',
+    'big-smile',
+    'bottts',
+    'croodles',
+    'fun-emoji',
+    'lorelei',
+    'micah',
+    'miniavs',
+    'notionists',
+    'open-peeps',
+    'personas',
+    'pixel-art',
+    'thumbs',
+  ];
   function p(e) {
-    const n = d();
-    if (0 === n.length) return '';
-    return n[e.split('').reduce((e, n) => e + n.charCodeAt(0), 0) % n.length];
+    const name = String(e ?? '匿名');
+    const h = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+    if (0 === h % 4) {
+      const n = d();
+      if (n.length > 0) return n[h % n.length];
+    }
+    const style = generatedAvatarStyles[h % generatedAvatarStyles.length];
+    return `https://api.dicebear.com/9.x/${style}/svg?seed=${encodeURIComponent(name)}&flip=${h % 2 === 0}`;
   }
   function C(e) {
     const n = m(e);

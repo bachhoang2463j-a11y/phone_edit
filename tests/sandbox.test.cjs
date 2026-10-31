@@ -30,6 +30,22 @@ function buildModuleRunner() {
     setTimeout, clearTimeout, setInterval, clearInterval,
     Promise, Math, Date, JSON, String, Number, Array, Object, RegExp, Error,
     URL, URLSearchParams, TextDecoder, Uint8Array, DataView, Blob,
+    YAML: { parse: () => null, stringify: () => '' },
+    Vue: { ref: (v) => ({ value: v }) },
+    _: {
+      get: (obj, path) => String(path).split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj),
+      set: (obj, path, v) => {
+        const keys = String(path).split('.');
+        let o = obj;
+        for (let i = 0; i < keys.length - 1; i++) {
+          if (o == null) return obj;
+          o = o[keys[i]];
+        }
+        if (o != null) o[keys[keys.length - 1]] = v;
+        return obj;
+      },
+      cloneDeep: (o) => JSON.parse(JSON.stringify(o)),
+    },
     globalThis: undefined,
     localStorage: {
       _store: {},
@@ -40,7 +56,8 @@ function buildModuleRunner() {
   };
     sandbox.globalThis = sandbox;
   const ctx = vm.createContext(sandbox);
-  const moduleCache = new Map();
+  const moduleCache = new Map(); // 已执行模块的 exports
+  const builtCache = new Map(); // 已解析未执行的工厂描述符（getModule 与 requireModule 分离，避免键冲突）
 
   // 模块 920 的函数体
   function buildFn(moduleText, moduleId) {
@@ -55,18 +72,18 @@ function buildModuleRunner() {
   }
 
   function getModule(id) {
-    if (moduleCache.has(id)) return moduleCache.get(id);
+    if (builtCache.has(id)) return builtCache.get(id);
     const text = extractModuleFromSrc(id);
     if (!text) throw new Error('模块 ' + id + ' 未找到于 src/modules/');
     const built = buildFnFrom(text, id);
-    moduleCache.set(id, built);
+    builtCache.set(id, built);
     return built;
   }
 
   function buildFnFrom(text, moduleId) {
-    const m = /^(\d+)\(e,n,t\)\{(.*)\}$/s.exec(text);
+    const m = /^(\d+)\(([^)]*)\)\{([\s\S]*)\}$/.exec(text);
     if (!m) throw new Error('模块体解析失败: ' + moduleId);
-    const body = m[2];
+    const body = m[3];
     const wrapped = '(function(e,n,t){' + body + '})';
     const fn = vm.runInContext(wrapped, ctx, { filename: `module_${moduleId}.js` });
     return { head: m[1], fn };
@@ -77,12 +94,7 @@ function buildModuleRunner() {
     const { fn } = getModule(id);
     const moduleObj = { exports: {} };
     // 构造 fake require（含 webpack 运行时 helper：t.r / t.d / t.n / t.o）
-    const fakeRequire = (depId) => {
-      if (!moduleCache.has(depId)) {
-        getModule(depId); // 触发构建并缓存
-      }
-      return moduleCache.get(depId).exports;
-    };
+    const fakeRequire = (depId) => requireModule(depId);
     fakeRequire.r = (exports) => { Object.defineProperty(exports, '__esModule', { value: true }); };
     fakeRequire.d = (exports, defs) => {
       for (const key of Object.keys(defs)) {
@@ -90,8 +102,9 @@ function buildModuleRunner() {
       }
     };
     fakeRequire.n = (mod) => {
-      const getter = (mod && mod.__esModule) ? () => mod : () => ({ default: mod });
-      getter.a = mod && mod.__esModule ? mod : { default: mod };
+      // 与真实 webpack 运行时一致：CJS 模块 getter 返回模块本身，ESM 返回 default
+      const getter = (mod && mod.__esModule) ? () => mod.default : () => mod;
+      getter.a = getter;
       return getter;
     };
     fakeRequire.o = (obj, prop) => Object.prototype.hasOwnProperty.call(obj, prop);
@@ -505,6 +518,40 @@ console.log('\n== B) Module 685 ComfyUI 分发 ==');
         t.sandbox.__improvedPhoneVarStorageInstall();
         ok('C11 重复安装幂等', t.sandbox.getChatMessages === first);
       }
+    }
+
+    // ---------------------------------------------------------------- 测试 D：DiceBear 多风格兜底头像
+    console.log('\n== D) DiceBear 多风格兜底头像 ==');
+    {
+      const r = buildModuleRunner();
+      const mod2213 = r.requireModule(2213);
+      const GEN_STYLES = [
+        'adventurer', 'avataaars', 'big-smile', 'bottts', 'croodles', 'fun-emoji', 'lorelei', 'micah',
+        'miniavs', 'notionists', 'open-peeps', 'personas', 'pixel-art', 'thumbs',
+      ];
+      const hash = (s) => [...s].reduce((a, c) => a + c.charCodeAt(0), 0);
+      // 找两个名字：一个走池分支（hash%4===0），一个走生成分支
+      let poolName = null;
+      let genName = null;
+      for (let i = 0; i < 200 && (!poolName || !genName); i++) {
+        const name = '头像混用测试' + i;
+        if (0 === hash(name) % 4) {
+          if (!poolName) poolName = name;
+        } else if (!genName) genName = name;
+      }
+      const genResult = mod2213.wH(genName);
+      ok('D1 兜底生成 DiceBear URL', genResult.startsWith('https://api.dicebear.com/9.x/'), genResult.slice(0, 60));
+      ok('D2 同名头像稳定', genResult === mod2213.wH(genName));
+      ok('D3 风格落在清单内', GEN_STYLES.some((s) => genResult.includes(`/9.x/${s}/`)));
+      ok('D4a 池分支走内置随机池', mod2213.wH(poolName).startsWith('https://files.catbox.moe/'), mod2213.wH(poolName).slice(0, 50));
+      ok('D4b 非池分支走 DiceBear', genResult.startsWith('https://api.dicebear.com/9.x/'));
+      let nameCn = null;
+      for (let i = 0; i < 200 && !nameCn; i++) {
+        const nm = '中文 种子' + i;
+        if (0 !== hash(nm) % 4) nameCn = nm;
+      }
+      const seedMatch = /[?&]seed=([^&]+)/.exec(mod2213.wH(nameCn));
+      ok('D5 seed 为名字的 URL 编码', !!seedMatch && decodeURIComponent(seedMatch[1]) === nameCn, mod2213.wH(nameCn).slice(0, 90));
     }
 
     console.log(`\n结果: ${pass} 通过, ${fail} 失败`);
