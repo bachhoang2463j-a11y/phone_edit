@@ -1,5 +1,5 @@
 // webpack 运行时（提取自 phone_index_fixed.js，共享绑定已重命名）
-const __webpackCache = {};
+const __webpackCache__ = {};
 let __webpackModules__ = {};
 export function registerModules(mods) {
   __webpackModules__ = mods;

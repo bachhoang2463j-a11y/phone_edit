@@ -101,6 +101,24 @@ const moduleFiles = fs.readdirSync(path.join(SRC_DIR, 'modules')).filter(f => f.
 ok(`module-table 注册数 = 模块文件数（${tableIds}/${moduleFiles}）`, tableIds === moduleFiles && tableIds === 154);
 const runtimeSrc = fs.readFileSync(path.join(SRC_DIR, 'webpack-runtime.js'), 'utf8');
 ok('webpack 运行时导出 require 与 registerModules', runtimeSrc.includes('export default __webpackRequire__') && runtimeSrc.includes('export function registerModules'));
+// 运行时文件内不得有未声明标识符（曾因 __webpackCache/__webpackCache__ 手误产生运行时 ReferenceError，
+// new Function 编译门禁对未定义引用无感，必须在源码层做绑定解析检查）
+{
+  const { parse } = require('@babel/parser');
+  const traverseMod = require('@babel/traverse');
+  const traverseFn = traverseMod.traverse || traverseMod.default?.traverse || traverseMod.default;
+  const rtAst = parse(runtimeSrc, { sourceType: 'module' });
+  const undeclared = new Set();
+  const BROWSER_GLOBALS = new Set(['Object', 'Symbol', 'Array', 'Promise', 'setTimeout', 'clearTimeout', 'console', 'String', 'JSON', 'Math', 'Date', 'Number', 'Boolean', 'Array', 'Error', 'RegExp', 'localStorage', 'sessionStorage', 'window', 'document', 'navigator', 'fetch', 'URL', 'URLSearchParams', 'TextDecoder', 'TextEncoder', 'Uint8Array', 'Blob', 'FileReader', 'Map', 'Set', 'globalThis', 'parseInt', 'parseFloat', 'isNaN', 'Function', 'Reflect', 'Proxy']);
+  traverseFn(rtAst, {
+    ReferencedIdentifier(p) {
+      const name = p.node.name;
+      if (['undefined', 'arguments', 'this'].includes(name) || BROWSER_GLOBALS.has(name)) return;
+      if (!p.scope.getBinding(name)) undeclared.add(name);
+    },
+  });
+  ok('webpack 运行时无未声明标识符', undeclared.size === 0, [...undeclared].join(','));
+}
 
 console.log(`\n结果: ${pass} 通过, ${fail} 失败`);
 process.exit(fail ? 1 : 0);
