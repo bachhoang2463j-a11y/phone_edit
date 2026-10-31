@@ -119,3 +119,15 @@
 - **校验漏洞**（两处均未拦截）：`node --check` 对本工程单行 ESM 大文件假阴性；`validate.cjs` 配平扫描在 byte 22565 处因原版正则字面量误判提前 break，扫描不到 370 万字节后的插入点。
 - **修复**：P40 收尾改为 `null,-1)])])`；`validate.cjs` 新增 2.5 节"剥离 import 后 new Function 全 bundle 编译检查"（原版基准已验证可通过、无误报）作为可靠语法门禁；README 验证命令同步说明。
 - **验证**：validate 68 项、沙箱 45 项通过；实机（调试 Chrome）验证：模块正常加载、`[PhoneVarStorage] 兼容层已安装` 日志出现、Vue 应用挂载（improved-phone-shadow-host 宿主出现）、点击【手机】界面完整渲染、包装后的 getChatMessages 范围/哨兵查询行为正确、与既有聊天变量键（$mms_roster 等）共存无冲突。
+
+## [20261031-source-restore] 2026-10-31 - 源码还原一期：4MB 压缩 bundle 重建为可构建多文件工程
+
+- **背景**：作者已离开社区（授权自由修改分发），长期接管需可编辑源码；原"单行 bundle + 文本级补丁"工作流退役。
+- **变更行为**：
+  1. `scripts/extract_modules.mjs`：@babel/parser 精确切分 `phone_index_fixed.js`（结构：uuid import → 154 模块表 2.55MB → webpack 运行时 → 入口内联 1.33MB → bootstrap IIFE），共享顶层绑定作用域安全重命名（`e→uuidV4`、`a→__webpackRequire__`、`n/t→表/缓存`），产出 `src/`（154 模块 + 运行时 + module-table + index）。直接以 fixed 为基线，P1-P41 补丁语义自动并入源码，P41 标记注释事后恢复。
+  2. vite 非 lib 模式构建单文件 ESM（入口加 `export {}` 防 rolldown CJS 壳）；uuid 改 npm 内置，去除 jsdelivr CDN 运行时依赖。
+  3. prettier 全量格式化；`scripts/rename_semantic.mjs` 语义重命名 52 项（920 共 27 项、685 共 20 项、入口 y5/b5/Yl/Q_/r5）——**核对中发现 VARIABLE_MAP §2.1/§2.2 多处映射与当前代码错位（如 685 的 y 实为 generateNovelAiImage 而非 isProcessingQueue），已按 t.d 导出表+函数体逐条修正**。
+  4. 测试套件适配：sandbox 45 项改由 `extractModuleFromSrc` 读 src 模块；validate 重写为 v2（dist 编译门禁 + 语义回归断言空白不敏感化 + 运行时绑定解析检查）；gate 9 项。
+  5. IAB 实机冒烟通过：手机启动/消息列表/设置页/ComfyUI 配置页（节点 ID 等字段齐全）。**冒烟抓到真 bug：运行时缓存声明 `__webpackCache` 与重命名后引用 `__webpackCache__` 错位 → new Function 编译门禁无感、实机 ReferenceError**，已修复并加绑定解析检查防回归。
+- **产物**：`dist/phone_index.js` 已部署至酒馆；源码含 prettier 3 默认 `trailingComma:"all"` 的尾逗号（函数调用尾逗号需 ES2017，原代码已用 `?.`/`catch{}`，运行环境无兼容问题）。
+- **遗留**：UI 仍为 render 函数形态（可编辑），模板逆向按需渐进；VARIABLE_MAP 的 5849/5756 对象属性（`V_.kQ` 等）未重命名（跨模块属性追踪留二期）。

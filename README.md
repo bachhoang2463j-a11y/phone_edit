@@ -13,13 +13,22 @@ D:/Project/phone/
 ├── README.md                      # 项目现状、使用方式与功能说明
 ├── LOG.md                         # 施工历史与决策记录
 ├── LOG-INDEX.md                   # 施工日志索引
-├── VARIABLE_MAP.md                # 压缩变量、函数与资源映射
+├── VARIABLE_MAP.md                # 压缩变量、函数与资源映射（部分条目已被语义重命名取代）
 ├── BUG_ANALYSIS.md                # ComfyUI 保存卡死排查记录
+├── src/                           # 还原后的可编辑源码工程（2026-10-31 起）
+│   ├── index.js                   # 入口（原 bundle 顶层内联代码，P1-P41 语义已合并）
+│   ├── webpack-runtime.js         # 原版 webpack 运行时（共享绑定已重命名）
+│   ├── module-table.js            # 模块 id → 工厂映射（脚本自动生成）
+│   └── modules/                   # 154 个 webpack 模块（920-configService / 685-imageGenService 等已语义命名）
+├── vite.config.mjs                # 单入口单文件 ESM 构建配置
+├── dist/phone_index.js            # 构建产物，部署此文件
+├── scripts/
+│   ├── extract_modules.mjs        # AST 模块切分（从 fixed bundle 重建 src/）
+│   ├── rename_semantic.mjs        # 服务层语义重命名（经代码核实）
+│   └── patch_comfyui.cjs          # 旧文本级补丁生成器（历史存档，语义已并入 src/）
+├── tests/                         # validate.cjs + sandbox.test.cjs + gate.cjs + extract.cjs
 ├── phone_index.js                 # 作者 8.0 原版基准
-├── phone_index_8.0_original.js    # 作者 8.0 原始文件副本
-├── phone_index_fixed.js           # 补丁生成产物，部署此文件
-├── scripts/patch_comfyui.cjs      # 文本级补丁生成器
-└── tests/                         # bundle 校验与 ComfyUI 沙箱测试
+└── phone_index_8.0_original.js    # 作者 8.0 原始文件副本
 ```
 
 ---
@@ -37,9 +46,10 @@ D:/Project/phone/
 
 ## 三、 本地导入与使用方式
 
-1. 将打包或补丁后的产物放入 SillyTavern 本地目录：
+1. 构建：`npx vite build`，产物为 `dist/phone_index.js`
+2. 将产物放入 SillyTavern 本地目录：
    `D:\SillyTavern\SillyTavern\public\scripts\phone_index.js`
-2. 在酒馆助手的脚本编辑框中导入：
+3. 在酒馆助手的脚本编辑框中导入：
    ```javascript
    import '/scripts/phone_index.js'
    ```
@@ -48,9 +58,9 @@ D:/Project/phone/
 
 ## 四、当前维护边界与手动载入预置资源
 
-本目录不再维护一套可独立构建的完整源码。当前可执行版本是作者 8.0 压缩 bundle `phone_index.js` 加文本级补丁生成的 `phone_index_fixed.js`；`phone_index_8.0_original.js` 是作者原始 8.0 基准。修改应优先写入 `scripts/patch_comfyui.cjs`，再运行 `node scripts/patch_comfyui.cjs` 生成产物。
+2026-10-31 起本仓库恢复为**可构建的源码工程**：作者已离开社区且无源码，经其授权自由修改与分发。原先"4MB 单行压缩 bundle + 文本级补丁"的工作流已退役——P1-P41 全部 59 处补丁的语义以源码形式合并进 `src/`（P41 兼容层保留 `/*__PHONE_VAR_STORAGE_START/END__*/` 标记注释作为锚点）。日常修改直接编辑 `src/` 下对应模块，然后 `npx vite build` 重新构建并部署 `dist/phone_index.js`。服务层已做语义命名（如 `sanitizeNovelAi`、`taskQueue`、`generateNovelAiImage`），命名依据见 `scripts/rename_semantic.mjs`；UI 组件仍为编译后的 render 函数形态（可编辑），按需渐进逆向为 .vue 模板。
 
-初始化时不再弹出“未检测到角色卡数据”资源导入窗口，也不再自动导入默认正则。需要载入新角色卡资源时，进入手机设置的“其他设置”→“预置资源”，分别勾选“加载默认数据”“加载默认表情包”“导入默认正则”，再点击“载入所选资源”。基础数据和表情包使用同一份角色变量对象一次性写回，避免后一次保存覆盖前一次结果；成功后静默刷新，不显示浏览器确认框、成功 toast 或“外置小手机已就绪”通知。
+初始化时不再弹出"未检测到角色卡数据"资源导入窗口，也不再自动导入默认正则。需要载入新角色卡资源时，进入手机设置的"其他设置"→"预置资源"，分别勾选"加载默认数据""加载默认表情包""导入默认正则"，再点击"载入所选资源"。基础数据和表情包使用同一份角色变量对象一次性写回，避免后一次保存覆盖前一次结果；成功后静默刷新，不显示浏览器确认框、成功 toast 或"外置小手机已就绪"通知。
 
 该流程已于 2026-08-20 完成 SillyTavern 实机验证：默认头像、背景和表情包均可正确载入，三个选项可独立控制，静默刷新及通知隐藏行为有效。
 
@@ -79,9 +89,10 @@ ComfyUI 配置和保存逻辑仍位于压缩模块 920，生图分发位于模�
 验证命令：
 
 ```text
-node scripts/patch_comfyui.cjs
-node tests/validate.cjs
-node tests/sandbox.test.cjs
+npx vite build                    # 构建 dist/phone_index.js
+node tests/validate.cjs           # dist 编译门禁 + 30 项语义回归断言 + 工程结构
+node tests/sandbox.test.cjs       # 45 项模块级行为测试（920/685/P41 兼容层）
+node tests/gate.cjs               # 产物快速门禁
 ```
 
-注意：`node --check phone_index_fixed.js` 对本工程的单行 ESM 大文件存在假阴性（曾放过一处右括号错误导致整包在 Chrome 解析失败），不可作为语法门禁；`tests/validate.cjs` 第 2.5 节的"剥离 import 后 new Function 全 bundle 编译检查"才是可靠门禁。
+注意：`node --check` 对单行 ESM 大文件存在假阴性；`tests/validate.cjs` 的全量编译与 `webpack 运行时无未声明标识符` 绑定解析检查才是可靠门禁（后者源于一次真实事故：运行时缓存变量名手误，编译门禁无感，IAB 实机执行才暴露）。

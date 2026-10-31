@@ -1,5 +1,7 @@
 # 酒馆助手手机插件（Improved Phone Shadow）核心变量与函数全景字典
 
+> **时效性警告（2026-10-31）**：源码还原后 §2.1/§2.2 的"压缩变量→还原命名"映射**部分与当前代码错位**（作者 8.0 演进 + 补丁迭代导致），实际命名以 `scripts/rename_semantic.mjs` 内经代码核实的映射为准（服务层已按其重命名）。§2.2 的函数职责描述仍然有效，但压缩名对照不可直接引用；§4.1 的入口名 y5/b5/Yl/Q_/r5 已重命名为 initPhone/importDefaultRegex/DEFAULT_STICKERS/notifyPhoneReady/presetResources。存储键与宿主 API 章节仍然有效。
+
 本文档深度剖析该插件（`phone_index.js` / Webpack Bundle）中所有混淆/压缩变量的真实语义、数据结构以及涉及的业务函数。
 
 ---
