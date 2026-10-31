@@ -119,6 +119,14 @@ ok('webpack 运行时导出 require 与 registerModules', runtimeSrc.includes('e
   });
   ok('webpack 运行时无未声明标识符', undeclared.size === 0, [...undeclared].join(','));
 }
+// 入口新增的顶层函数必须有声明（曾因 __webpackCache__ 手误产生运行时 ReferenceError 的同类预防）
+{
+  const entrySrc = fs.readFileSync(path.join(SRC_DIR, 'index.js'), 'utf8');
+  for (const fn of ['openPrivateChatWith', 'forumJumpWithPost']) {
+    ok(`入口顶层函数已声明: ${fn}`, entrySrc.includes(`function ${fn}(`));
+  }
+  ok('Profile 人设卡片已接入', entrySrc.includes('人设卡片') && entrySrc.includes('generatePersona') && entrySrc.includes('fetchCharacterProfileFromAi'));
+}
 
 console.log(`\n结果: ${pass} 通过, ${fail} 失败`);
 process.exit(fail ? 1 : 0);

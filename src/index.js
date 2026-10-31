@@ -19414,9 +19414,91 @@ const Zp = (0, vn.A)(Hp, [['__scopeId', 'data-v-63adae68']]),
         }
         ((x.value = n), console.info('[Profile] 加载历史动态:', n.length, '条'));
       }
+      const persona = (0, i.ref)(null),
+        personaLoading = (0, i.ref)(!1);
+      function loadPersona() {
+        try {
+          const char = (0, A.nC)(t.userName);
+          persona.value = char?.profile && 'object' == typeof char.profile ? char.profile : null;
+        } catch {
+          persona.value = null;
+        }
+      }
+      async function generatePersona() {
+        if (personaLoading.value) return;
+        personaLoading.value = !0;
+        try {
+          const { fetchCharacterProfileFromAi: e } = await Promise.resolve().then(
+              __webpackRequire__.bind(__webpackRequire__, 112),
+            ),
+            n = await e(t.userName);
+          if (n.success && n.data) {
+            persona.value = n.data;
+            try {
+              const vars = getVariables({ type: 'character' }) || {},
+                data = vars?.phone_data,
+                list = data && Array.isArray(data.characters) ? data.characters : null,
+                ch =
+                  list &&
+                  (list.find((c) => c.name === t.userName) || list.find((c) => c.nickname === t.userName));
+              if (ch) {
+                ch.profile = { ...n.data, generatedAt: Date.now() };
+                await replaceVariables(vars, { type: 'character' });
+              }
+            } catch (e) {
+              console.warn('[Profile] 人设保存到角色数据失败:', e);
+            }
+            X('人设生成成功');
+          } else X(n.error || '人设生成失败');
+        } catch {
+          X('人设生成失败');
+        } finally {
+          personaLoading.value = !1;
+        }
+      }
+      function personaSection(label, text) {
+        return (0, i.createElementVNode)('div', { style: { marginBottom: '6px' } }, [
+          (0, i.createElementVNode)('span', { style: { fontWeight: '600', color: '#666', marginRight: '4px' } }, label + '：'),
+          (0, i.createTextVNode)(String(text ?? '').trim()),
+        ]);
+      }
+      function personaSummary(p) {
+        const parts = [];
+        if (!p || 'object' != typeof p) return parts;
+        p.identity && parts.push(personaSection('身份', p.identity));
+        const ap = p.appearance && 'object' == typeof p.appearance ? String(p.appearance.impression || '').trim() : '';
+        ap && parts.push(personaSection('外观', ap));
+        const per = p.personality && 'object' == typeof p.personality ? p.personality : null;
+        if (per) {
+          const bits = [];
+          per.mbti && 'unknown' !== String(per.mbti).toLowerCase() && bits.push(String(per.mbti));
+          Array.isArray(per.keywords) && per.keywords.length && bits.push(per.keywords.join('、'));
+          per.flaw && bits.push(`弱点：${per.flaw}`);
+          bits.length && parts.push(personaSection('性格', bits.join('；')));
+        }
+        Array.isArray(p.experience) &&
+          p.experience.length &&
+          parts.push(personaSection('经历', p.experience.map((e) => `· ${String(e)}`).join('\n')));
+        Array.isArray(p.relationships) &&
+          p.relationships.length &&
+          parts.push(
+            personaSection(
+              '关系',
+              p.relationships
+                .map((r) =>
+                  'string' == typeof r
+                    ? `· ${r}`
+                    : `· ${[r?.name ?? r?.target, r?.description ?? r?.desc ?? r?.type].filter(Boolean).join('：')}`,
+                )
+                .join('\n'),
+            ),
+          );
+        return parts;
+      }
       (0, i.onMounted)(() => {
-        (!(async function () {
-          console.info('[Profile] 开始加载动态主页数据，人物:', t.userName);
+        (loadPersona(),
+          !(async function () {
+            console.info('[Profile] 开始加载动态主页数据，人物:', t.userName);
           const e = t.userName,
             n = await I('dynamicHome', e);
           if (n) return (console.info('[Profile] 从楼层历史加载到数据'), (g.value = n), void (0, p.uH)(n));
@@ -20081,6 +20163,50 @@ const Zp = (0, vn.A)(Hp, [['__scopeId', 'data-v-63adae68']]),
               ]),
             ]),
           ]),
+          (0, i.createCommentVNode)(' 人设卡片 '),
+          (0, i.createElementVNode)(
+            'div',
+            {
+              style: (0, i.normalizeStyle)({
+                margin: '10px 12px',
+                padding: '12px 14px',
+                background: '#fff',
+                borderRadius: '14px',
+                boxShadow: '0 1px 6px rgba(0, 0, 0, 0.06)',
+              }),
+            },
+            [
+              (0, i.createElementVNode)(
+                'div',
+                {
+                  style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' },
+                },
+                [
+                  (0, i.createElementVNode)('span', { style: { fontWeight: '600', fontSize: '14px', color: '#222' } }, '人设'),
+                  personaLoading.value
+                    ? (0, i.createElementVNode)('span', { style: { fontSize: '12px', color: '#999' } }, '生成中…', 1)
+                    : (0, i.createElementVNode)(
+                        'span',
+                        { style: { fontSize: '12px', color: '#4a7dfc', cursor: 'pointer' }, onClick: generatePersona },
+                        (0, i.toDisplayString)(persona.value ? '重新生成' : 'AI 生成'),
+                        1,
+                      ),
+                ],
+              ),
+              persona.value
+                ? (0, i.createElementVNode)(
+                    'div',
+                    { style: { fontSize: '13px', lineHeight: '1.6', color: '#333', whiteSpace: 'pre-line' } },
+                    personaSummary(persona.value),
+                  )
+                : (0, i.createElementVNode)(
+                    'div',
+                    { style: { fontSize: '12px', color: '#999' } },
+                    '还没有人设，点击「AI 生成」补全角色资料',
+                    1,
+                  ),
+            ],
+          ),
           (0, i.createCommentVNode)(' 标签切换 '),
           (0, i.createElementVNode)('div', dC, [
             ((0, i.openBlock)(!0),
@@ -79240,5 +79366,17 @@ function k5() {
       }
     })(),
     t && initPhone());
+  // 兜底：脚本先于聊天恢复加载时（initial chat_id 为空），轮询到聊天就绪后重载完成初始化
+  t ||
+    (function () {
+      const check = () => {
+        let id = '';
+        try {
+          id = String(SillyTavern.getCurrentChatId?.() || '');
+        } catch {}
+        id ? window.location.reload() : setTimeout(check, 300);
+      };
+      setTimeout(check, 300);
+    })();
 })();
 export {};

@@ -7,6 +7,7 @@ export default function (e, n, t) {
     e_: () => Fe,
     fetchBrowserDataFromAi: () => Be,
     fetchCalendarDataFromAi: () => we,
+    fetchCharacterProfileFromAi: () => Se,
     fetchDiaryDataFromAi: () => Ne,
     fetchDynamicDataFromAi: () => ie,
     fetchDynamicHomeDataFromAi: () => se,
@@ -1721,6 +1722,58 @@ export default function (e, n, t) {
         data: A,
       }
     );
+  }
+  async function Se(e) {
+    // 生成单个角色的人设：复用 plotCharacters 格式指导（默认预设含完整人设 schema），取返回的第一个角色
+    console.info('[AI Service] fetchCharacterProfileFromAi 被调用，人物:', e);
+    const n = V(),
+      t = {
+        currentView: 'plotCharacters',
+        currentPage: '角色人设',
+        userInput: `请只生成「${e}」这一个角色的完整人设（不要生成其他角色），信息需符合已有剧情上下文`,
+        formatGuide: n.formatGuide,
+        historyConfig: n.historyConfig,
+        targetCharacters: [e],
+      },
+      a = await (0, C.hm)(n.blocks, t),
+      o = (0, C.g0)(a);
+    console.info('[AI Service] 角色人设 - 发送的消息:', o);
+    const r = await Y(o, void 0, 'plotCharacters');
+    if (!r.success)
+      return {
+        success: !1,
+        data: null,
+        error: r.error,
+      };
+    console.info('[AI Service] 角色人设 - AI响应原始内容:', r.content);
+    const i = await ne(r.content),
+      s = te(r.content),
+      c = i || s;
+    if (!c)
+      return (
+        console.error('[AI Service] 角色人设 - 无法解析响应'),
+        {
+          success: !1,
+          data: null,
+          error: '无法解析 AI 响应数据',
+        }
+      );
+    const A =
+      c?.plot_characters_output?.plot_characters ?? c?.plot_characters?.plot_characters ?? c?.plot_characters;
+    const d = Array.isArray(A) ? A[0] : A && 'object' == typeof A ? A : null;
+    return d
+      ? {
+          success: !0,
+          data: d,
+        }
+      : (
+          console.error('[AI Service] 角色人设 - 响应中未找到角色对象'),
+          {
+            success: !1,
+            data: null,
+            error: 'AI 响应中未包含角色人设',
+          }
+        );
   }
   function le(e, n) {
     if (!e || 'object' != typeof e) return e;
