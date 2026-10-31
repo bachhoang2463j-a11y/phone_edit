@@ -2,6 +2,7 @@
 
 | 日期 | 行为 | LOG.md 行号 | HASH |
 | :--- | :--- | :--- | :--- |
+| 2026-11-01 | 修复缓存块永不命中：14 处读取方并入虚拟楼层上限，写入路径保持裸 id（去重拉 AI 耦合） | L187-L198 | de4aef2 |
 | 2026-11-01 | 排障：论坛作者 [object Object] 渲染损坏（patchFlag 误用）+ 兜底头像 base64 + 陌生作者私聊登记 | L169-L182 | 59d4c9c |
 | 2026-10-31 | 头像 DiceBear 内联本地化（10 风格，+572KB raw/+160KB gzip，去 CDN） | LOG.md 末尾 | 见 avatar-inline 提交 |
 | 2026-10-31 | 头像丰富度：DiceBear 14 风格兜底头像（与随机池混用） | LOG.md 末尾 | 见 avatar-richness 提交 |

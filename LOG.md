@@ -183,3 +183,15 @@
 - **事故与教训**：部署新 dist 后手机 iframe 里旧 Vue 组件实例仍存活（TavernHelper 不随脚本替换重建 iframe 内组件），页面表现与磁盘代码不一致——排障必须先 reload 手机 iframe 再取运行时证据（本轮"改了没效果"假象即由此来，耗时段落）。测试注入的 localStorage 缓存（测试甲/测试乙）已恢复原值并清理。
 - **遗留（待用户拍板）**：论坛/动态缓存块存聊天变量（$phone_blocks）但 `getLastMessageId()` 范围不含虚拟楼层 → 缓存永不命中、每次进页都重新调 AI（"存 API 后才有内容"的耦合）。候选方案已调研（读取范围扩展需连动 F/S 写入路径，风险面大），按用户指示暂缓。
 - **产物**：dist（4,957,917 B，md5 4694b1b3）已部署酒馆。
+
+## [20261101-cache-read] 2026-11-01 - 修复缓存块永不命中：读取方并入虚拟楼层上限（去"存 API 后才有内容"耦合）
+
+- **背景**：上轮排障遗留项经用户拍板修复。P41 兼容层把手机缓存块（`phone_module`/`chat_history`，BLOCK_RE 两者都收）存进聊天变量 `$phone_blocks` 并以虚拟楼层（id ≥ 1e9）经 hook 暴露，但 `V/N/D/S/M/I`（index.js）与 `D/M/I/Y/j/G`（2213.js，私聊/群聊/一起听/偷看历史）共 14 处读取方按 `getLastMessageId()` 算滑动窗口——真实楼层数少于缓存块数时（短聊天常态）范围 `'0-0'` 永远扫不到虚拟楼层 → **缓存写入成功、读取永不命中、每次进动态/论坛都重调 AI**（未配 API 时直接报"请先在设置中配置 API"），且缓存块随每次生成无限累积。
+- **变更行为**：
+  1. 兼容层 `install()` 暴露 `globalThis.__phoneVirtualLastId()`（= SENTINEL + 块数 - 1，无块为 -1）。
+  2. 上述 14 处读取方滑动窗口上限改为 `Math.max(getLastMessageId(), __phoneVirtualLastId?.() ?? -1)`（可选调用，兼容层未安装时行为不变）。
+  3. **写入路径刻意保持裸 `getLastMessageId()`**：F 的 appendToLastMessage 分支、saveCharacterModuleToMessage、日记/一起听追加、私聊/群聊 chatAppendToLastMessage、"删最后一块"按钮——避免对虚拟楼层 id 做 setChatMessages 追加（兼容层哨兵更新分支取 `nb[last]` 语义，追加式写入会丢旧块）。
+  4. 生图持久化链路（`S('dynamic', n)` 找原楼层→setChatMessages）随之修复：S 现在能找到虚拟楼层，哨兵更新按槽位替换 block，不再警告"生图结果不会持久化"。
+- **实测语义**（真 Chrome 验证）：TavernHelper 的 `getChatMessages('起点越界-1e9')` 真实端从头返回 + 兼容层拼接虚拟楼层；`'0-0'` 经 parseSingleId 走单查不含虚拟层——这正是此前短聊天必现 miss 的机制。
+- **验证**：sandbox 55 项（C12 上限数值、C13 起点越界/从头范围均命中缓存块；测试垫片同步改为实测的 TavernHelper 范围语义）、validate 38 项（14 处扩展计数锚点 + 暴露锚点 + F 追加分支裸 id 锚点）、gate 9、social-regression 3 组全绿。真机：论坛日志 `[History] forum - 从楼层 1000000004 读取到数据 → [Store] 从楼层历史加载论坛数据`、动态 `[History] dynamic - 从楼层 1000000007 读取到数据`，零 AI 调用、列表即时渲染、头像 base64 正常。
+- **产物**：dist（4,958,821 B，md5 435c0159）已部署酒馆。
