@@ -500,7 +500,7 @@ export default function (e, n, t) {
   function D() {
     const e = new Map();
     try {
-      const n = getLastMessageId();
+      let n = Math.max(getLastMessageId(), globalThis.__phoneVirtualLastId?.() ?? -1);
       if (n < 0) return e;
       const t = (0, c.Q)().historyReadCount,
         a = 0 === t ? 0 : Math.max(0, n - t + 1),
@@ -594,7 +594,7 @@ export default function (e, n, t) {
   function M() {
     const e = [];
     try {
-      const n = getLastMessageId();
+      let n = Math.max(getLastMessageId(), globalThis.__phoneVirtualLastId?.() ?? -1);
       if (n < 0) return e;
       const t = (0, c.Q)().historyReadCount,
         a = 0 === t ? 0 : Math.max(0, n - t + 1),
@@ -660,7 +660,7 @@ export default function (e, n, t) {
   function I(e, n, t = 100) {
     const a = [];
     try {
-      const r = getLastMessageId();
+      let r = Math.max(getLastMessageId(), globalThis.__phoneVirtualLastId?.() ?? -1);
       if (r < 0) return a;
       const i = (0, c.Q)().historyReadCount,
         s = 0 === i ? 0 : Math.max(0, r - i + 1),
@@ -780,7 +780,7 @@ export default function (e, n, t) {
   function Y(e, n = 100) {
     const t = [];
     try {
-      const a = getLastMessageId();
+      let a = Math.max(getLastMessageId(), globalThis.__phoneVirtualLastId?.() ?? -1);
       if (a < 0) return t;
       const r = (0, c.Q)().historyReadCount,
         i = 0 === r ? 0 : Math.max(0, a - r + 1),
@@ -828,7 +828,7 @@ export default function (e, n, t) {
   function j(e, n = 100) {
     const t = [];
     try {
-      const a = getLastMessageId();
+      let a = Math.max(getLastMessageId(), globalThis.__phoneVirtualLastId?.() ?? -1);
       if ((console.info(`[Data] 群聊历史 - lastMsgId: ${a}, 群名: "${e}"`), a < 0)) return t;
       let r = '',
         s = 0;
@@ -898,7 +898,7 @@ export default function (e, n, t) {
   function G(e) {
     const n = [];
     try {
-      const t = getLastMessageId();
+      let t = Math.max(getLastMessageId(), globalThis.__phoneVirtualLastId?.() ?? -1);
       if (t < 0) return n;
       const a = (0, c.Q)(),
         r = a.historyReadCount,

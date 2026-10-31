@@ -183,7 +183,7 @@ function N(e) {
           const n = h(e);
           if (!n) return null;
           try {
-            const e = getLastMessageId();
+            let e = Math.max(getLastMessageId(), globalThis.__phoneVirtualLastId?.() ?? -1);
             if (e < 0) return null;
             const t = (0, d.Q)().historyReadCount,
               a = 0 === t ? 0 : Math.max(0, e - t + 1),
@@ -272,7 +272,7 @@ function V(e) {
       n(
         (function (e) {
           try {
-            const n = getLastMessageId();
+            let n = Math.max(getLastMessageId(), globalThis.__phoneVirtualLastId?.() ?? -1);
             if (n < 0) return (console.info(`[History] ${e} - 没有楼层消息`), null);
             const t = (0, d.Q)().historyReadCount,
               a = 0 === t ? 0 : Math.max(0, n - t + 1),
@@ -308,7 +308,7 @@ function V(e) {
 function D(e) {
   const n = [];
   try {
-    const t = getLastMessageId();
+    let t = Math.max(getLastMessageId(), globalThis.__phoneVirtualLastId?.() ?? -1);
     if (t < 0) return n;
     const a = (0, d.Q)().historyReadCount,
       o = 0 === a ? 0 : Math.max(0, t - a + 1),
@@ -351,7 +351,7 @@ async function S(e, n, t) {
       t ??
       (function (e) {
         try {
-          const n = getLastMessageId();
+          let n = Math.max(getLastMessageId(), globalThis.__phoneVirtualLastId?.() ?? -1);
           if (n < 0) return null;
           const t = (0, d.Q)().historyReadCount,
             a = 0 === t ? 0 : Math.max(0, n - t + 1),
@@ -406,7 +406,7 @@ async function M(e, n, t, a) {
           try {
             const t = (e) => e.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
               a = f(n),
-              o = getLastMessageId();
+              o = Math.max(getLastMessageId(), globalThis.__phoneVirtualLastId?.() ?? -1);
             if (o < 0) return null;
             const r = (0, d.Q)().historyReadCount,
               i = 0 === r ? 0 : Math.max(0, o - r + 1),
@@ -470,7 +470,7 @@ function I(e, n) {
           try {
             const t = (e) => e.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
               a = f(n),
-              o = getLastMessageId();
+              o = Math.max(getLastMessageId(), globalThis.__phoneVirtualLastId?.() ?? -1);
             if (o < 0) return (console.info(`[History] ${e}:${n} - 没有楼层消息`), null);
             const r = (0, d.Q)().historyReadCount,
               i = 0 === r ? 0 : Math.max(0, o - r + 1),
@@ -19359,7 +19359,7 @@ const Zp = (0, vn.A)(Hp, [['__scopeId', 'data-v-63adae68']]),
             try {
               const a = (e) => e.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
                 o = f(n),
-                r = getLastMessageId();
+                r = Math.max(getLastMessageId(), globalThis.__phoneVirtualLastId?.() ?? -1);
               if (r < 0) return t;
               const i = (0, d.Q)().historyReadCount,
                 s = 0 === i ? 0 : Math.max(0, r - i + 1),
@@ -22343,7 +22343,7 @@ const Ng = (0, vn.A)(wg, [['__scopeId', 'data-v-27f3b0f8']]),
       function b() {
         const e = [];
         try {
-          const n = getLastMessageId();
+          let n = Math.max(getLastMessageId(), globalThis.__phoneVirtualLastId?.() ?? -1);
           if (n < 0) return e;
           const t = getChatMessages(`0-${n}`);
           if (!t || 0 === t.length) return e;
@@ -79328,6 +79328,17 @@ function k5() {
         });
       };
       g.__improvedPhoneVarStorageInstalled = !0;
+      // 缓存块（phone_module/chat_history）存聊天变量，以虚拟楼层 id ≥ SENTINEL 暴露；
+      // 楼层读取方按 getLastMessageId 算滑动窗口会漏掉它们，暴露上限供读取方扩展范围（未安装时为 undefined，调用方须可选调用）。
+      // 写入路径（F 的 appendToLastMessage、删最后一块按钮等）刻意保持裸 getLastMessageId，不指向虚拟楼层。
+      globalThis.__phoneVirtualLastId = function () {
+        try {
+          const b = readBlocks();
+          return b.length ? SENTINEL + b.length - 1 : -1;
+        } catch {
+          return -1;
+        }
+      };
       return (console.info('[PhoneVarStorage] 聊天变量存储兼容层已安装'), !0);
     }
     globalThis.__improvedPhoneVarStorageInstall = install;

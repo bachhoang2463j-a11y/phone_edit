@@ -93,6 +93,15 @@ ok('两处设置合并均含 useChatVariables', (flat.match(/useChatVariables:n\
 ok('设置页含聊天隐藏变量开关', flat.includes('内容存入聊天隐藏变量') && flat.includes("a('useChatVariables',ucv.value)"));
 ok('新开关不占用渲染缓存槽位', flat.includes("'onUpdate:modelValue':(e)=>(ucv.value=e)"));
 
+// —— 缓存读取范围扩展（P41 兼容层的虚拟楼层对读取方可见）——
+// 读取方（index 8 处 + 2213 6 处）滑动窗口并入虚拟楼层上限；写入路径保持裸 getLastMessageId
+const virtExt = 'Math.max(getLastMessageId(),globalThis.__phoneVirtualLastId?.()??-1)';
+const virtExtCount = (flat.match(new RegExp(virtExt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;
+ok('缓存读取点扩展范围（14 处）', virtExtCount === 14, '实际 ' + virtExtCount);
+ok('兼容层暴露虚拟楼层上限', flat.includes('globalThis.__phoneVirtualLastId=function()'));
+ok('兼容层注释写明写入路径保持裸 id', flat.includes('写入路径（F的appendToLastMessage、删最后一块按钮等）刻意保持裸getLastMessageId'));
+ok('F 追加分支仍用裸楼层 id', flat.includes('appendToLastMessage){constn=getLastMessageId()'));
+
 // ---- 源码工程结构 ----
 console.log('== 3) 源码工程结构 ==');
 const tableSrc = fs.readFileSync(path.join(SRC_DIR, 'module-table.js'), 'utf8');

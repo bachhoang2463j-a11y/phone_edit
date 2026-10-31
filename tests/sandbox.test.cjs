@@ -415,7 +415,14 @@ console.log('\n== B) Module 685 ComfyUI 分发 ==');
             const s = String(range);
             const m = s.match(/^(\d+)-(\d+)$/);
             let ids = [];
-            if (m) { for (let i = +m[1]; i <= +m[2]; i++) ids.push(i); }
+            if (m) {
+              // 实测 TavernHelper：起点越界（虚拟楼层并入后 lastId 远超真实层数）时真实端从头返回
+              const from = +m[1], to = +m[2];
+              const realIds = Object.keys(floors).map(Number);
+              const maxReal = realIds.length ? Math.max(...realIds) : -1;
+              const start = from > maxReal ? 0 : from;
+              ids = realIds.filter((i) => i >= start && i <= to).sort((a, b) => a - b);
+            }
             else if (/^-?\d+$/.test(s)) ids = [Math.max(0, parseInt(s, 10))];
             return ids.filter((i) => floors[i]).map((i) => Object.assign({}, floors[i]));
           },
@@ -529,6 +536,27 @@ console.log('\n== B) Module 685 ComfyUI 分发 ==');
         const first = t.sandbox.getChatMessages;
         t.sandbox.__improvedPhoneVarStorageInstall();
         ok('C11 重复安装幂等', t.sandbox.getChatMessages === first);
+      }
+
+      // C12 暴露虚拟楼层上限（缓存读取方扩展滑动窗口用）
+      {
+        const t = buildShimSandbox();
+        ok('C12 无块时上限为 -1', t.sandbox.__phoneVirtualLastId() === -1);
+        t.chatVars.$phone_blocks = ['<phone_module type="a">1</phone_module>', '<phone_module type="b">2</phone_module>', '<phone_module type="c">3</phone_module>'];
+        ok('C12 上限 = SENTINEL + 块数 - 1', t.sandbox.__phoneVirtualLastId() === 1e9 + 2);
+      }
+
+      // C13 滑动窗口起点越界（虚拟楼层并入后 lastId 远超真实楼层）仍可读到缓存
+      {
+        const t = buildShimSandbox();
+        const b1 = '<phone_module type="forum" timestamp="1">title: 论坛缓存</phone_module>';
+        t.chatVars.$phone_blocks = [b1];
+        // 真实楼层 0..1，lastId 扩展为 1e9 后窗口起点 = lastId - count + 1 会是 999999953 一类
+        const rows = t.sandbox.getChatMessages('999999953-1000000000');
+        ok('C13 起点越界范围仍含真实楼层', rows.some((r) => r.message_id === 0));
+        ok('C13 起点越界范围含虚拟缓存块', rows.some((r) => r.message_id === 1e9 && r.message === b1));
+        const rows2 = t.sandbox.getChatMessages('0-1000000000');
+        ok('C13 从头范围同样命中缓存块', rows2.some((r) => r.message_id === 1e9));
       }
     }
 
