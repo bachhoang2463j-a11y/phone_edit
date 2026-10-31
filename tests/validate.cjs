@@ -1,136 +1,106 @@
 #!/usr/bin/env node
 /**
- * 验证补丁脚本的每个 to 文本都是合法 JS，且补丁后 bundle 全局括号/字符串配平与备份一致。
- * 复用 patch_comfyui.cjs 导出的 replacements（require 时补丁会重跑一遍，幂等）。
+ * 源码工程验证（v2，替代原"补丁产物"验证）。
+ * 原 v1 针对文本级补丁产物 phone_index_fixed.js；源码还原后（P1-P41 已语义合并进 src/）：
+ *  - 补丁片段编译/配平对比节随之作废，由 dist 全量编译门禁取代；
+ *  - 第 3 节的语义回归断言全部保留，改为对 src 全文（剥离空白后）匹配，
+ *    标识符同步语义重命名的映射（b5→importDefaultRegex，Q_→notifyPhoneReady 等）。
  */
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { replacements } = require(path.join(__dirname, '..', 'scripts', 'patch_comfyui.cjs'));
 
 let pass = 0, fail = 0;
-console.log('== 1) 每个补丁 to 文本语法 ==');
-// 片段式补丁（非完整函数体，需特殊上下文验证）
-const fragmentAsExpr = new Set([]);
-const skipCompile = new Set([
-  'P3_920新增sanitizeComfyUi函数',        // 模块体中间片段，由沙箱 920 测试证明
-  'P7_685_插入comfyui分发分支',           // async 函数体内片段，由沙箱 685 测试证明
-  'P18_boot_禁用旧初始化资源弹窗',          // boot 条件链中间片段（以 }catch 续前文），由配平+命中验证
-  'P17_render_模型与参数区加ComfyUI配置区块', // render 流片段（末尾开启 pollinations 分支由原文本闭合），由配平+d索引验证
-  'P22_render_ComfyUI分支稳定key并禁用标题缓存', // render 表达式中间片段，由最终产物断言验证
-  'P25_boot_preset_loader',                    // 函数声明前置注入，末尾继续原 y5 函数
-  'P27_other_settings_preset_button',          // render 表达式流片段，由最终产物断言验证
-  'P28_boot_hide_ready_notification',          // boot 表达式流片段，由最终产物断言验证
-  'P29_boot_disable_automatic_regex_import',   // boot 表达式流片段，由最终产物断言验证
-  'P40_settings_render_聊天隐藏变量开关',        // render 前缀插入片段（不闭合），由最终产物断言验证
-  'P41_boot_聊天变量存储兼容层',                 // boot await 前缀片段（不闭合），由沙箱 C 组测试证明
-]);
-for (const r of replacements) {
-  if (skipCompile.has(r.name) || r.name.startsWith('P24_')) { console.log(`  ≈ ${r.name}（由最终产物断言证明）`); continue; }
-  try {
-    if (fragmentAsExpr.has(r.name)) {
-      // 剥前导逗号后作为表达式验证（render 表达式流片段）
-      const expr = r.to.startsWith(',') ? r.to.slice(1) : r.to;
-      new Function('return (' + expr + ');');
-    } else {
-      new Function(r.to);
-    }
-    pass++;
-    console.log(`  ✓ ${r.name}`);
-  } catch (e) {
-    fail++;
-    console.log(`  ✗ ${r.name}: ${e.message}`);
+const ok = (name, cond, extra) => {
+  if (cond) { pass++; console.log(`  ✓ ${name}`); }
+  else { fail++; console.log(`  ✗ ${name}${extra ? ' :: ' + extra : ''}`); }
+};
+
+// ---- 加载 src 全文并剥离空白（语义匹配锚点） ----
+const SRC_DIR = path.join(__dirname, '..', 'src');
+function collectSrc(dir) {
+  let out = '';
+  for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, ent.name);
+    if (ent.isDirectory()) out += collectSrc(p);
+    else if (ent.name.endsWith('.js')) out += fs.readFileSync(p, 'utf8') + '\n';
   }
+  return out;
 }
+const flat = collectSrc(SRC_DIR).replace(/\s+/g, '');
+// 锚点书写约定：minified 原文形态，经 fp() 与 flat 同规则剥空白后比对；
+// prettier 会给 await 链/!function 加括号、按 trailingComma:"all" 加尾逗号，此类锚点按 prettier 后形态手写
+const fp = s => s.replace(/\s+/g, '');
 
-// 2) 全局括号/字符串配平扫描
-function balanceCheck(code) {
-  let depth = 0, state = 'code', quote = '', bad = null;
-  for (let i = 0; i < code.length; i++) {
-    const ch = code[i], nx = code[i + 1];
-    if (state === 'code') {
-      if (ch === "'" || ch === '"') { state = 'str'; quote = ch; }
-      else if (ch === '`') { state = 'tpl'; }
-      else if (ch === '(' || ch === '{' || ch === '[') depth++;
-      else if (ch === ')' || ch === '}' || ch === ']') { depth--; if (depth < 0) { bad = '负深度 @' + i; break; } }
-    } else if (state === 'str') {
-      if (ch === '\\') i++;
-      else if (ch === quote) state = 'code';
-    } else if (state === 'tpl') {
-      if (ch === '\\') i++;
-      else if (ch === '`') state = 'code';
-      else if (ch === '$' && nx === '{') { state = 'code'; i++; }
-    }
-  }
-  if (state !== 'code') bad = '未闭合字符串/模板, state=' + state;
-  return { depth, bad };
-}
+// ---- dist 编译门禁 ----
+const distPath = path.join(__dirname, '..', 'dist', 'phone_index.js');
+const dist = fs.readFileSync(distPath, 'utf8');
 
-console.log('== 2) 全局配平对比 ==');
-const original = fs.readFileSync(path.join(__dirname, '..', 'phone_index.js'), 'utf8');
-const fixed = fs.readFileSync(path.join(__dirname, '..', 'phone_index_fixed.js'), 'utf8');
-const r1 = balanceCheck(original);
-const r2 = balanceCheck(fixed);
-console.log(`  original: depth=${r1.depth} bad=${r1.bad || '无'}`);
-console.log(`  fixed: depth=${r2.depth} bad=${r2.bad || '无'}`);
-// bundle 自身含正则字面量会导致状态机误判（original 与 fixed 同一位置），
-// 判定标准：fixed 相对 original 未引入新的不平衡（bad 位置相同即视为通过）
-if (!r2.bad || (r1.bad && r2.bad && r1.bad === r2.bad)) { pass++; console.log('  ✓ fixed 未引入新不平衡（与 original 一致）'); }
-else { fail++; console.log('  ✗ fixed 存在 original 没有的不平衡'); }
+console.log('== 1) dist 全量编译与自包含 ==');
+try { new Function(dist); ok('dist 直接全量编译（无顶层 import，uuid 已内置）', true); }
+catch (e) { ok('dist 直接全量编译', false, e.message.slice(0, 120)); }
+ok('dist 无 CDN 依赖残留', !dist.includes('testingcf.jsdelivr'));
+ok('dist 保留初始化日志', dist.includes('[Improved Phone] Initializing'));
 
-// 2.5) 全 bundle 编译检查。
-// node --check 对本文件存在假阴性（ESM 单行大文件），配平扫描在负深度处提前 break 也扫不到尾部插入点；
-// 唯一可靠门禁：剥离顶层 import 后 new Function 整体编译（原版基准已验证可通过，无误报）。
-console.log('== 2.5) 全 bundle 编译检查（剥离 import 后 new Function） ==');
-{
-  const strippedBundle = fixed.replace(/^import[\s\S]*?from\s*['"][^'"]*['"];?/gm, '');
-  try { new Function(strippedBundle); pass++; console.log('  ✓ 全 bundle 语法编译通过'); }
-  catch (e) { fail++; console.log('  ✗ 全 bundle 语法编译失败: ' + e.message); }
-}
+console.log('== 2) 语义回归断言（src 全文，空白不敏感） ==');
+// —— ComfyUI 设置区（原 P16/P17/P22/P24 约束）——
+ok('ComfyUI 分支有稳定 key', flat.includes("{key:'comfyui',class:'settings-section'"));
+ok('新增表单不占用 Vue 缓存槽位 d[149..156]', !/\d\[(?:149|15[0-6])\]/.test(flat));
 
-console.log('== 3) ComfyUI 保存卡死回归约束 ==');
-const checks = [
-  ['ComfyUI 分支有稳定 key', fixed.includes("{key:'comfyui',class:'settings-section'" )],
-  ['新增表单不占用 Vue 缓存槽位', !/d\[(?:149|15[0-6])\]/.test(fixed)],
-  ['保存前复制普通配置快照', fixed.includes('const cfCfg={...n.value,novelai:{...n.value.novelai}')],
-  ['保存写入让出点击事件循环', fixed.includes('setTimeout(()=>{let t;try{t=(0,Hr.saveNovelAiConfig)(cfCfg)')],
-];
-const comfyStart = fixed.indexOf("{key:'comfyui',class:'settings-section'");
-const comfyEnd = fixed.indexOf("'pollinations'===n.value.apiFormat", comfyStart);
-const comfyRender = comfyStart >= 0 && comfyEnd > comfyStart ? fixed.slice(comfyStart, comfyEnd) : '';
-const presetStart = fixed.indexOf('async function __improvedPhoneLoadPresetResources');
-const presetEnd = fixed.indexOf('globalThis.__improvedPhoneLoadPresetResources', presetStart);
-const presetLoader = presetStart >= 0 && presetEnd > presetStart ? fixed.slice(presetStart, presetEnd) : '';
-const legacyImageEntryLabels = fixed.match(/'pollinations'===([A-Za-z_$][\w$]*)\.apiFormat\?'Pollinations':'openai'===\1\.apiFormat\?'OpenAI':'gemini'===\1\.apiFormat\?'Gemini':'NovelAI'/g) || [];
-const comfyImageEntryLabels = fixed.match(/'gemini'===([A-Za-z_$][\w$]*)\.apiFormat\?'Gemini':'comfyui'===\1\.apiFormat\?'ComfyUI':'NovelAI'/g) || [];
-const comfyImageEntryConfigs = fixed.match(/'gemini'===([A-Za-z_$][\w$]*)\.apiFormat\?\1\.gemini:'comfyui'===\1\.apiFormat\?\1\.comfyui:\1\.pollinations/g) || [];
-const comfyUrlOnlyChecks = fixed.match(/'comfyui'===([A-Za-z_$][\w$]*)\.apiFormat&&([A-Za-z_$][\w$]*)\.url/g) || [];
-checks.push(
-  ['ComfyUI v-model 使用 NEED_PATCH 标志', (comfyRender.match(/null,512\)/g) || []).length === 6],
-  ['ComfyUI 表单不存在无动态属性列表的 PROPS 标志', !comfyRender.includes('null,8)')],
-  ['旧版初始化资源弹窗已禁用', fixed.includes("&&!1&&!function(){try{const e=getVariables({type:'character'})")],
-  ['手动预置资源加载器已注册', fixed.includes('globalThis.__improvedPhoneLoadPresetResources=__improvedPhoneLoadPresetResources')],
-  ['角色数据和表情包只执行一次变量写回', (presetLoader.match(/replaceVariables\(/g) || []).length === 1],
-  ['其他设置页包含三个资源勾选项', fixed.includes("'加载默认数据'") && fixed.includes("'加载默认表情包'") && fixed.includes("'导入默认正则'")],
-  ['资源按钮载入所选项目', fixed.includes("P.value?'载入中...':'载入所选资源'")],
-  ['资源导入不再使用浏览器确认框', !fixed.includes("confirm('将用内置预置覆盖当前角色卡")],
-  ['资源导入成功后静默刷新', fixed.includes("if(!((!O.value||n.data)&&(!R.value||n.stickers)&&(!X.value||n.regex)))throw new Error('部分预置资源载入失败');window.location.reload()")],
-  ['初始化完成通知已隐藏', fixed.includes('}else $_(e);const t=ke(),')],
-  ['默认正则不再启动时自动导入', fixed.includes('!1&&await b5(),await B5(),')],
-  ['所有运行时生图入口显示 ComfyUI 标签', legacyImageEntryLabels.length === 0 && comfyImageEntryLabels.length === 7],
-  ['所有运行时生图入口读取 comfyui 配置', comfyImageEntryConfigs.length === 7],
-  ['所有运行时生图入口对 ComfyUI 仅校验 URL', comfyUrlOnlyChecks.length === 7],
-  ['聊天变量存储兼容层已注入', fixed.includes('/*__PHONE_VAR_STORAGE_START__*/') && fixed.includes('globalThis.__improvedPhoneVarStorageInstall=install')],
-  ['聊天变量键为 $phone_blocks（宏不可见）', fixed.includes("const VAR_KEY='$phone_blocks'")],
-  ['设置默认开启聊天变量存储', fixed.includes('useChatVariables:!0')],
-  ['两处设置合并均含 useChatVariables', (fixed.match(/useChatVariables:n\.useChatVariables\?\?r\.useChatVariables/g) || []).length === 2],
-  ['设置页含聊天隐藏变量开关', fixed.includes('内容存入聊天隐藏变量') && fixed.includes("a('useChatVariables',ucv.value)")],
-  ['新开关不占用渲染缓存槽位', fixed.includes("'onUpdate:modelValue':e=>ucv.value=e")],
-);
-for (const [name, ok] of checks) {
-  if (ok) { pass++; console.log(`  ✓ ${name}`); }
-  else { fail++; console.log(`  ✗ ${name}`); }
-}
+const comfyStart = flat.indexOf("{key:'comfyui',class:'settings-section'");
+const comfyEnd = flat.indexOf("'pollinations'===n.value.apiFormat", comfyStart);
+const comfyRender = comfyStart >= 0 && comfyEnd > comfyStart ? flat.slice(comfyStart, comfyEnd) : '';
+ok('ComfyUI 设置区切片有效', comfyRender.length > 500 && comfyRender.length < 10000, `长度 ${comfyRender.length}`);
+// prettier 3 trailingComma:"all" 会把最后一个实参写作 `512,)`，故锚点不带右括号
+ok('ComfyUI v-model 使用 NEED_PATCH 标志（6 处）', (comfyRender.match(/null,512/g) || []).length === 6,
+  '实际 ' + (comfyRender.match(/null,512/g) || []).length);
+ok('ComfyUI 表单不存在无动态属性列表的 PROPS 标志', !!comfyRender && !comfyRender.includes('null,8'));
+
+// —— 保存流程（P6/P13 约束）——
+ok('保存前复制普通配置快照', flat.includes(fp('const cfCfg={...n.value,novelai:{...n.value.novelai')));
+ok('保存写入让出点击事件循环', flat.includes(fp('setTimeout(()=>{let t;try{t=(0,Hr.saveNovelAiConfig)(cfCfg)')));
+
+// —— 预置资源流程（P18/P25-P29 约束）——
+ok('旧版初始化资源弹窗已禁用', flat.includes("&&!1&&!(function(){try{conste=getVariables({type:'character'"));
+ok('手动预置资源加载器已注册', flat.includes('globalThis.__improvedPhoneLoadPresetResources=__improvedPhoneLoadPresetResources'));
+const presetStart = flat.indexOf('asyncfunction__improvedPhoneLoadPresetResources');
+const presetEnd = flat.indexOf('globalThis.__improvedPhoneLoadPresetResources', presetStart);
+const presetLoader = presetStart >= 0 && presetEnd > presetStart ? flat.slice(presetStart, presetEnd) : '';
+ok('角色数据和表情包只执行一次变量写回', (presetLoader.match(/replaceVariables\(/g) || []).length === 1,
+  '实际 ' + (presetLoader.match(/replaceVariables\(/g) || []).length);
+ok('其他设置页包含三个资源勾选项', flat.includes("'加载默认数据'") && flat.includes("'加载默认表情包'") && flat.includes("'导入默认正则'"));
+ok('资源按钮载入所选项目', flat.includes("P.value?'载入中...':'载入所选资源'"));
+ok('资源导入不再使用浏览器确认框', !flat.includes("confirm('将用内置预置覆盖当前角色卡"));
+ok('资源导入成功后静默刷新', flat.includes("if(!((!O.value||n.data)&&(!R.value||n.stickers)&&(!X.value||n.regex)))thrownewError('部分预置资源载入失败');window.location.reload()"));
+ok('初始化完成通知已隐藏', flat.includes(fp('}else $_(e);const t=ke(),')));
+ok('默认正则不再启动时自动导入', flat.includes('!1&&(awaitimportDefaultRegex()),awaitB5(),'));
+
+// —— 七处运行时生图入口（P30-P32 约束）——
+const legacyImageEntryLabels = flat.match(/'pollinations'===([A-Za-z_$][\w$]*)\.apiFormat\?'Pollinations':'openai'===\1\.apiFormat\?'OpenAI':'gemini'===\1\.apiFormat\?'Gemini':'NovelAI'/g) || [];
+const comfyImageEntryLabels = flat.match(/'gemini'===([A-Za-z_$][\w$]*)\.apiFormat\?'Gemini':'comfyui'===\1\.apiFormat\?'ComfyUI':'NovelAI'/g) || [];
+const comfyImageEntryConfigs = flat.match(/'gemini'===([A-Za-z_$][\w$]*)\.apiFormat\?\1\.gemini:'comfyui'===\1\.apiFormat\?\1\.comfyui:\1\.pollinations/g) || [];
+const comfyUrlOnlyChecks = flat.match(/'comfyui'===([A-Za-z_$][\w$]*)\.apiFormat&&([A-Za-z_$][\w$]*)\.url/g) || [];
+ok('所有运行时生图入口显示 ComfyUI 标签（7 处）', legacyImageEntryLabels.length === 0 && comfyImageEntryLabels.length === 7,
+  `legacy=${legacyImageEntryLabels.length}, comfy=${comfyImageEntryLabels.length}`);
+ok('所有运行时生图入口读取 comfyui 配置（7 处）', comfyImageEntryConfigs.length === 7, '实际 ' + comfyImageEntryConfigs.length);
+ok('所有运行时生图入口对 ComfyUI 仅校验 URL（7 处）', comfyUrlOnlyChecks.length === 7, '实际 ' + comfyUrlOnlyChecks.length);
+
+// —— P41 聊天变量存储兼容层 ——
+ok('聊天变量存储兼容层已注入（含标记注释）', flat.includes('/*__PHONE_VAR_STORAGE_START__*/') && flat.includes('/*__PHONE_VAR_STORAGE_END__*/') && flat.includes('globalThis.__improvedPhoneVarStorageInstall=install'));
+ok('聊天变量键为 $phone_blocks（宏不可见）', flat.includes("constVAR_KEY='$phone_blocks'"));
+ok('设置默认开启聊天变量存储', flat.includes('useChatVariables:!0'));
+ok('两处设置合并均含 useChatVariables', (flat.match(/useChatVariables:n\.useChatVariables\?\?r\.useChatVariables/g) || []).length === 2);
+ok('设置页含聊天隐藏变量开关', flat.includes('内容存入聊天隐藏变量') && flat.includes("a('useChatVariables',ucv.value)"));
+ok('新开关不占用渲染缓存槽位', flat.includes("'onUpdate:modelValue':(e)=>(ucv.value=e)"));
+
+// ---- 源码工程结构 ----
+console.log('== 3) 源码工程结构 ==');
+const tableSrc = fs.readFileSync(path.join(SRC_DIR, 'module-table.js'), 'utf8');
+const tableIds = (tableSrc.match(/^  (\d+): m\d+,$/gm) || []).length;
+const moduleFiles = fs.readdirSync(path.join(SRC_DIR, 'modules')).filter(f => f.endsWith('.js')).length;
+ok(`module-table 注册数 = 模块文件数（${tableIds}/${moduleFiles}）`, tableIds === moduleFiles && tableIds === 154);
+const runtimeSrc = fs.readFileSync(path.join(SRC_DIR, 'webpack-runtime.js'), 'utf8');
+ok('webpack 运行时导出 require 与 registerModules', runtimeSrc.includes('export default __webpackRequire__') && runtimeSrc.includes('export function registerModules'));
 
 console.log(`\n结果: ${pass} 通过, ${fail} 失败`);
 process.exit(fail ? 1 : 0);

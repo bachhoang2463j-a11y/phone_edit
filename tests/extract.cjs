@@ -6,6 +6,31 @@
  */
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
+
+const SRC_MODULES_DIR = path.join(__dirname, '..', 'src', 'modules');
+
+/**
+ * 从 src/modules/ 源文件加载指定模块，重建与 extractModule 相同的 "ID(params){...}" 字符串形状。
+ * @param {number|string} id 目标模块 id
+ * @returns {string|null} "ID(e,n,t){...}" 形状字符串，找不到返回 null
+ */
+function extractModuleFromSrc(id) {
+  let file;
+  try {
+    file = fs.readdirSync(SRC_MODULES_DIR).find(f => f === `${id}.js` || f.startsWith(`${id}-`));
+  } catch {
+    return null;
+  }
+  if (!file) return null;
+  const code = fs.readFileSync(path.join(SRC_MODULES_DIR, file), 'utf8');
+  const m = /^\s*\/\/[^\n]*\n*export default (?:async )?function\s*\(([^)]*)\)\s*\{([\s\S]*)\}\s*$/.exec(code);
+  if (!m) throw new Error('src 模块文件解析失败: ' + file);
+  const [, params, body] = m;
+  return `${id}(${params.replace(/\s+/g, '')}){${body}}`;
+}
+
 /**
  * @param {string} code bundle 全文
  * @param {number} id 目标模块 id
@@ -24,7 +49,7 @@ function extractModule(code, id) {
   return code.slice(m.index + (code[m.index] === ',' ? 1 : 0), nm.index);
 }
 
-module.exports = { extractModule };
+module.exports = { extractModule, extractModuleFromSrc };
 
 if (require.main === module) {
   const fs = require('fs');

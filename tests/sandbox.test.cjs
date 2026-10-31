@@ -1,19 +1,20 @@
 #!/usr/bin/env node
 /**
- * 沙箱集成测试：验证补丁后 phone_index_fixed.js 中
+ * 沙箱集成测试：验证还原源码工程 src/ 中
  *  A) 配置中心 920：comfyui 保存/读取往返、配额降级、旧配置兼容
  *  B) 生图引擎 685：ComfyUI 分发分支全链路（mock fetch 三接口）
  *  C) 聊天变量存储兼容层：mock 楼层/变量 API，验证重定向、虚拟楼层、哨兵更新/删除、透传与模式开关
+ * 模块体改由 tests/extract.cjs 的 extractModuleFromSrc 从 src/modules/*.js 加载（不再切分 bundle）。
  */
 'use strict';
 
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const { extractModule } = require('./extract.cjs');
+const { extractModuleFromSrc } = require('./extract.cjs');
 
-const BUNDLE = path.join(__dirname, '..', 'phone_index_fixed.js');
-const code = fs.readFileSync(BUNDLE, 'utf8');
+const INDEX_SRC = path.join(__dirname, '..', 'src', 'index.js');
+const indexSrc = fs.readFileSync(INDEX_SRC, 'utf8');
 
 let pass = 0;
 let fail = 0;
@@ -48,33 +49,15 @@ function buildModuleRunner() {
     const head = m[1], body = m[2];
     // 包装为 (e,n,t)=>body
     const wrapped = `(function(e,n,t){${body}})`;
-    // 头部 t.d 导出重定向
-    const redirected = wrapped.replace(/t\.d\(n,\{([\s\S]*?)\}\)/, 't.d(n,{__redirect__:()=>1,$1})');
+    // 头部 t.d 导出重定向（prettier 格式化后属性间有空白，需容错）
+    const redirected = wrapped.replace(/t\.d\(n,\s*\{([\s\S]*?)\}\s*\)/, 't.d(n,{__redirect__:()=>1,$1})');
     return { head, fn: vm.runInContext('(' + redirected + ')', ctx, { filename: `module_${moduleId}.js` }) };
   }
 
   function getModule(id) {
     if (moduleCache.has(id)) return moduleCache.get(id);
-    const text = extractModule(code, id);
-    if (!text) {
-      // 特殊：112 前缀是 {n={112( 而非 ,112(
-      const m = new RegExp('(?:^|\\{)' + id + '\\(e,n,t\\)\\{').exec(code);
-      if (m) {
-        const { buildBody } = (() => {
-          // 从头到下一个模块标记
-          const start = m.index + m[0].length - 1;
-          const next = /,\d{1,4}\(e,n,t\)\{/g;
-          next.lastIndex = start;
-          const nm = next.exec(code);
-          return { buildBody: () => code.slice(m.index, nm.index) };
-        })();
-        const text2 = buildBody();
-        const built = buildFnFrom(text2, id);
-        moduleCache.set(id, built);
-        return built;
-      }
-      throw new Error('模块 ' + id + ' 未找到');
-    }
+    const text = extractModuleFromSrc(id);
+    if (!text) throw new Error('模块 ' + id + ' 未找到于 src/modules/');
     const built = buildFnFrom(text, id);
     moduleCache.set(id, built);
     return built;
@@ -210,7 +193,7 @@ console.log('\n== B) Module 685 ComfyUI 分发 ==');
 
   const fake920 = (() => {
     // 构建 920 模块
-    const text920 = extractModule(code, 920);
+    const text920 = extractModuleFromSrc(920);
     const m = /^(\d+)\(e,n,t\)\{(.*)\}$/s.exec(text920);
     const fn920 = vm.runInContext('(function(e,n,t){' + m[2] + '})', ctx);
     const mod920 = { exports: {} };
@@ -222,7 +205,7 @@ console.log('\n== B) Module 685 ComfyUI 分发 ==');
     return mod920.exports;
   })();
 
-  const text685 = extractModule(code, 685);
+  const text685 = extractModuleFromSrc(685);
   const m685 = /^(\d+)\(e,n,t\)\{(.*)\}$/s.exec(text685);
   const fn685 = vm.runInContext('(function(e,n,t){' + m685[2] + '})', ctx);
   const mod685 = { exports: {} };
@@ -379,9 +362,9 @@ console.log('\n== B) Module 685 ComfyUI 分发 ==');
     {
       const START = '/*__PHONE_VAR_STORAGE_START__*/';
       const END = '/*__PHONE_VAR_STORAGE_END__*/';
-      const si = code.indexOf(START), ei = code.indexOf(END);
+      const si = indexSrc.indexOf(START), ei = indexSrc.indexOf(END);
       ok('C0 兼容层已注入产物', si >= 0 && ei > si);
-      const shimCode = code.slice(si, ei + END.length);
+      const shimCode = indexSrc.slice(si, ei + END.length);
 
       // 每个用例独立沙箱：mock 楼层/变量 API，安装 shim 后测行为
       function buildShimSandbox() {
